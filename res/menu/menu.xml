@@ -22,7 +22,7 @@ app:showAsAction="always"
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" >
-    
+    <!-- 
      <item
         android:id="@+id/action_settings"
         android:title="@string/settings"
@@ -39,7 +39,7 @@ app:showAsAction="always"
         android:id="@+id/action_slideshow"
         android:title="@string/slideshow"
         android:icon="@drawable/ic_menu_slideshow"
-        app:showAsAction="always" /> 
+        app:showAsAction="always" /> -->
         
      <item
         android:id="@+id/media_route_menu_item"

@@ -10,7 +10,6 @@ import org.json.JSONObject;
 import android.util.Log;
 
 import com.google.cast.MessageStream;
-import com.squeed.chromecast.hipstacaster.grid.ImageItem;
 
 /**
  * An abstract class which encapsulates control for sending and receiving messages to/from the receiver app.
@@ -20,7 +19,7 @@ import com.squeed.chromecast.hipstacaster.grid.ImageItem;
 public abstract class MicrogramCasterMessageStream extends MessageStream {
 	private static final String TAG = MicrogramCasterMessageStream.class.getSimpleName();
 
-	private static final String HIPSTACASTER_NAMESPACE = "com.squeed.microgramcaster";
+	private static final String NAMESPACE = "com.squeed.microgramcaster";
 
 	// Receivable event types
 	private static final String KEY_EVENT = "event";
@@ -38,8 +37,8 @@ public abstract class MicrogramCasterMessageStream extends MessageStream {
 	 * Constructs a new HipstaCasterMessageStream with HIPSTACASTER_NAMESPACE as the namespace
 	 * used by the superclass.
 	 */
-	protected HipstaCasterMessageStream() {
-		super(HIPSTACASTER_NAMESPACE);
+	protected MicrogramCasterMessageStream() {
+		super(NAMESPACE);
 	}
 
 	protected abstract void onSlideShowEnded();
@@ -76,69 +75,16 @@ public abstract class MicrogramCasterMessageStream extends MessageStream {
             Log.e(TAG, "Message Stream is not attached", e);
         }
     }
-	
-	/**
-	 * Sends a full set of data for images to the cast device.
-	 * @param photoSet
-	 * 		Photo data.
-	 * @param offset
-	 * 		Supply a starting offset for the cast device to use for starting the slideshow at some none 0 index.
-	 */
-	public final void sendPhotoSetToChromecast(ArrayList<ImageItem> photoSet, int offset) {
-		try {
-            Log.d(TAG, "sendPhotoSetToChromecast");
-            JSONArray array = new JSONArray();
-            for(ImageItem imageItem : photoSet) {
-            	JSONObject payload = new JSONObject();
-            	
-                payload.put("fullsizeUrl", imageItem.getUrl());
-                payload.put("ownerName", imageItem.getOwnerName());
-                payload.put("title", imageItem.getTitle());
-                payload.put("description", imageItem.getDescription());
-                array.put(payload);
-            }
-            
-            JSONObject obj = new JSONObject();
-            obj.put(KEY_COMMAND, "slideshow");
-            obj.put("photoSet", array);
-            obj.put("offset", offset);
-           
-            sendMessage(obj);
-        } catch (JSONException e) {
-            Log.e(TAG, "Cannot parse or serialize data for sendPhotoSetToChromecast", e);
-        } catch (IOException e) {
-            Log.e(TAG, "Unable to send a sendPhotoSetToChromecast message", e);
-        } catch (IllegalStateException e) {
-            Log.e(TAG, "Message Stream is not attached", e);
-        }
-	}
+
+
 
 	@Override
 	public void onMessageReceived(JSONObject message) {
-		try {
+		//try {
 			Log.d(TAG, "onMessageReceived: " + message);
-			if (message.has(KEY_EVENT)) {
-				String event = message.getString(KEY_EVENT);
-				if (KEY_ERROR.equals(event)) {
-					Log.d(TAG, "ERROR");
-					try {
-						String errorMessage = message.getString(KEY_MESSAGE);
-						onError(errorMessage);
-					} catch (JSONException e) {
-						e.printStackTrace();
-					}
-				}
-				else if (KEY_SLIDESHOW_ENDED.equals(event)) {
-					onSlideShowEnded();
-				}
-				else if (KEY_SLIDESHOW_CURRENT_IMAGE_MSG.equals(event)) {
-					onCurrentSlideShowImageMessage(message.getString(KEY_TEXT));
-				}
-			} else {
-				Log.w(TAG, "Unknown message: " + message);
-			}
-		} catch (JSONException e) {
-			Log.w(TAG, "Message doesn't contain an expected key.", e);
-		}
+			
+		//} catch (JSONException e) {
+		//	Log.w(TAG, "Message doesn't contain an expected key.", e);
+		//}
 	}	
 }
