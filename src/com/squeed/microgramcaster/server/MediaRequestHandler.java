@@ -1,5 +1,6 @@
 package com.squeed.microgramcaster.server;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,28 +40,55 @@ public class MediaRequestHandler implements HttpRequestHandler {
 			response.setHeader("Content-Type", "text/html");
 			return;
 		}
-		HttpEntity entity = new EntityTemplate(new ContentProducer() {
-			public void writeTo(final OutputStream outstream) throws IOException {
-				InputStream input = context.getContentResolver().openInputStream(Uri.parse("file:" + mediaItem.getData()));
-				try {
-					
-					byte[] buffer = new byte[1024*128];
-					int len;
-					while ((len = input.read(buffer)) != -1) {
-						outstream.write(buffer, 0, len);
+		
+		String r = request.getFirstHeader("Range").getValue();
+		if(r != null && r.startsWith("bytes=")) {
+			
+//			response.setStatusCode(206);
+//			
+//					
+//			String range = r.split("=")[1];
+//			
+//			final long rangeStart = Long.parseLong(range.split("-")[0]);
+//			final long rangeEnd = Long.parseLong(range.split("-").length == 2 ? range.split("-")[1] : "-1");
+//			response.setHeader("Accept-Ranges","bytes");
+//			response.setHeader("Content-Length", ""+ ((rangeEnd != -1 ? rangeEnd : mediaItem.getSize()) - rangeStart));
+//			response.setHeader("Content-Range","bytes "+rangeStart+"-"+(rangeEnd != -1 ? rangeEnd : mediaItem.getSize())+"/" + mediaItem.getSize());
+			
+			HttpEntity entity = new EntityTemplate(new ContentProducer() {
+				public void writeTo(final OutputStream outstream) throws IOException {
+					InputStream input = context.getContentResolver().openInputStream(Uri.parse("file:" + mediaItem.getData()));
+					try {
+						
+						byte[] buffer = new byte[4096];
+						int len;
+						while ((len = input.read(buffer)) != -1) {
+							outstream.write(buffer, 0, len);	
+							outstream.flush();
+						}
 						outstream.flush();
-					}
+						
+					} catch (Exception e) {
+						e.printStackTrace();
+					} finally {
 
-					outstream.flush();
-				} catch (Exception e) {
-					e.printStackTrace();
-				} finally {
-					if(input != null) input.close();
+						if(input != null) input.close();
+					}
 				}
-			}
-		});
-		response.setHeader("Content-Type", "video/mp4");
-		response.setEntity(entity);
+			});
+			
+			response.setHeader("Content-Type", "video/mp4");
+			
+			//response.setHeader("Content-Length", ""+mediaItem.getSize());
+			response.setEntity(entity);
+		} else {
+			response.setStatusCode(400);
+			response.setHeader("Content-Type", "text/html");
+		}
+		
+		
+		
+		
 	}
 
 	public Context getContext() {

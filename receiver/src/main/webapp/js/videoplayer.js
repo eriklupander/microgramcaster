@@ -23,3 +23,7 @@ function humanizeDuration(input, units ) {
 
   return duration.format(format);
 }
+
+function playVideo(url) {
+    $('#video').attr('src',url);
+}
