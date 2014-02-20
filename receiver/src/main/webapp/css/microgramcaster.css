@@ -1,0 +1,22 @@
+body {
+	overflow: hidden;
+	margin: 0px;
+}
+
+#message {
+	background-color: #000000;
+	border: 0 solid #C0C0C0;
+	color: #FFFFFF;
+	display: block;
+	font-family: Verdana,Geneva,sans-serif;
+	font-size: 20px;
+	font-weight: bold;
+	left: 40px;
+	opacity: 0.5;
+	position: absolute;
+	text-align: center;
+	top: 630px;
+	vertical-align: middle;
+	width: 1200px;
+	z-index: 999;
+}
