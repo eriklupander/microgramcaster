@@ -1,11 +1,17 @@
 package com.squeed.microgramcaster;
 
+/**
+ * Simple encapsulation of some MediaStore item metadata.
+ * @author Erik
+ *
+ */
 public class MediaItem {
 
 	private Integer id;
 	private String name;
 	private String data;
 	private Long size;
+	private String lastModified;
 	
 	public Integer getId() {
 		return id;
@@ -30,6 +36,12 @@ public class MediaItem {
 	}
 	public void setData(String data) {
 		this.data = data;
+	}
+	public String getLastModified() {
+		return lastModified;
+	}
+	public void setLastModified(String lastModified) {
+		this.lastModified = lastModified;
 	}
 	
 	

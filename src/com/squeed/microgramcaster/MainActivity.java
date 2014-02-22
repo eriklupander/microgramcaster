@@ -34,9 +34,21 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-
+import com.squeed.microgramcaster.server.MyHTTPD;
 import com.squeed.microgramcaster.server.WebServerService;
+import com.squeed.microgramcaster.util.WifiHelper;
 
+/**
+ * Start Activity for the MicrogramCaster Android app.
+ * 
+ * Lists castable files, starts the HTTP server through a Service Intent and provides the Google Cast
+ * plumbing.
+ * 
+ * Derived from Google's android-helloworld examples at github.com (TODO add full URL)
+ * 
+ * @author Erik
+ *
+ */
 public class MainActivity extends ActionBarActivity {
 
 	private static final String TAG = "MainActivity";
@@ -79,6 +91,7 @@ public class MainActivity extends ActionBarActivity {
 		// Start media router discovery
 		mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback,
 				MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
+			
 	}
 
 	@Override
@@ -117,7 +130,8 @@ public class MainActivity extends ActionBarActivity {
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 					long arg3) {
-				sendMessage(((TextView)arg1).getText().toString());
+				String fileName = ((TextView)arg1).getText().toString();
+				sendMessage(MyHTTPD.WEB_SERVER_PROTOCOL + "://" + WifiHelper.getLanIP(MainActivity.this) + ":" + MyHTTPD.WEB_SERVER_PORT + "/" + fileName);
 			}
 		};
 		listView.setOnItemClickListener(listener );
@@ -312,7 +326,7 @@ public class MainActivity extends ActionBarActivity {
 
 												// set the initial instructions
 												// on the receiver
-												sendMessage(getString(R.string.app_name));
+												//sendMessage(getString(R.string.app_name));
 											} else {
 												Log.e(TAG,
 														"application could not launch");

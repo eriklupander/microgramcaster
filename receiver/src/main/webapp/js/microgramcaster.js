@@ -40,7 +40,7 @@ var microgramcaster = new function() {
 		console.log('Message [' + event.senderId + ']: ' + event.data);
 		// display the message from the sender
         microgramcaster.displayText(event.data);
-        playVideo('http://192.168.1.104:8181/' + event.data);
+        playVideo(event.data);
 		// inform all senders on the CastMessageBus of the incoming message event
 		// sender message listener will be invoked
 		window.messageBus.send(event.senderId, event.data);
