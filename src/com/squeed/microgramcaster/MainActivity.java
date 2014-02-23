@@ -1,7 +1,11 @@
 package com.squeed.microgramcaster;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
@@ -34,6 +38,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.cast.JsonUtils;
 import com.squeed.microgramcaster.server.MyHTTPD;
 import com.squeed.microgramcaster.server.WebServerService;
 import com.squeed.microgramcaster.util.WifiHelper;
@@ -66,10 +71,14 @@ public class MainActivity extends ActionBarActivity {
 	private ConnectionCallbacks mConnectionCallbacks;
 	private ConnectionFailedListener mConnectionFailedListener;
 
-	private HelloWorldChannel mHelloWorldChannel;
+	private MicrogramCasterChannel mHelloWorldChannel;
 
 	private boolean mApplicationStarted;
 	private boolean mWaitingForReconnect;
+
+	private MenuItem playIcon;
+
+	private MenuItem pauseIcon;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -131,11 +140,15 @@ public class MainActivity extends ActionBarActivity {
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 					long arg3) {
 				String fileName = ((TextView)arg1).getText().toString();
-				sendMessage(MyHTTPD.WEB_SERVER_PROTOCOL + "://" + WifiHelper.getLanIP(MainActivity.this) + ":" + MyHTTPD.WEB_SERVER_PORT + "/" + fileName);
+				sendMessage(PlayerCmdFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));
+				pauseIcon.setVisible(true);
 			}
 		};
-		listView.setOnItemClickListener(listener );
+		listView.setOnItemClickListener(listener);
+		
 	}
+
+	
 
 	private void startWebServer() {
 		Intent webServerService = new Intent(this, WebServerService.class);
@@ -152,6 +165,33 @@ public class MainActivity extends ActionBarActivity {
 				.getActionProvider(mediaRouteMenuItem);
 		// Set the MediaRouteActionProvider selector for device discovery.
 		mediaRouteActionProvider.setRouteSelector(mMediaRouteSelector);
+		
+		playIcon = menu
+				.findItem(com.squeed.microgramcaster.R.id.action_play);
+		playIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+			
+			@Override
+			public boolean onMenuItemClick(MenuItem item) {
+				sendMessage(PlayerCmdFactory.buildPlayCommand());
+				playIcon.setVisible(false);
+				pauseIcon.setVisible(true);
+				return false;
+			}
+		});
+		pauseIcon = menu
+				.findItem(com.squeed.microgramcaster.R.id.action_pause);
+		pauseIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+			
+			@Override
+			public boolean onMenuItemClick(MenuItem item) {
+				sendMessage(PlayerCmdFactory.buildPauseCommand());
+				playIcon.setVisible(true);
+				pauseIcon.setVisible(false);
+				return false;
+			}
+		});
+		playIcon.setVisible(false);
+		pauseIcon.setVisible(false);
 		return true;
 	}
 
@@ -175,6 +215,8 @@ public class MainActivity extends ActionBarActivity {
 			Log.i(TAG, "onRouteUnselected: " + route);
 			teardown();
 			mSelectedDevice = null;
+			playIcon.setVisible(false);
+			pauseIcon.setVisible(false);
 		}
 	}
 
@@ -310,7 +352,7 @@ public class MainActivity extends ActionBarActivity {
 
 												// Create the custom message
 												// channel
-												mHelloWorldChannel = new HelloWorldChannel();
+												mHelloWorldChannel = new MicrogramCasterChannel();
 												try {
 													Cast.CastApi
 															.setMessageReceivedCallbacks(
@@ -347,6 +389,30 @@ public class MainActivity extends ActionBarActivity {
 		}
 	}
 	
+	private void sendMessage(PlayerCmd cmd) {
+		try {
+			JSONObject obj = new JSONObject();
+			obj.put("id", cmd.getId());
+			obj.put("params", new JSONObject(cmd.getParams()));
+      
+			if (mApiClient != null && mHelloWorldChannel != null) {
+			    try {
+			        Cast.CastApi.sendMessage(mApiClient,
+			                mHelloWorldChannel.getNamespace(), obj.toString());
+			    } catch (Exception e) {
+			        Log.e(TAG, "Exception while sending message", e);
+			    }
+			} else {
+			    Toast.makeText(MainActivity.this, "Unable to send CMD to receiver, no connection", Toast.LENGTH_SHORT)
+			    .show();
+			    launchReceiver();
+			 }
+		} catch (JSONException e) {
+			Toast.makeText(MainActivity.this, "Unable to serialize CMD into JSON: " + e.getMessage(), Toast.LENGTH_LONG)
+		    .show();
+		}
+	}
+	
 	/**
 	* Send a text message to the receiver
 	*
@@ -374,6 +440,10 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+	private String buildMediaItemURL(String fileName) {
+		return MyHTTPD.WEB_SERVER_PROTOCOL + "://" + WifiHelper.getLanIP(MainActivity.this) + ":" + MyHTTPD.WEB_SERVER_PORT + "/" + fileName;
+	}
+
 	/**
 	 * Google Play services callbacks
 	 */
@@ -390,7 +460,7 @@ public class MainActivity extends ActionBarActivity {
 	/**
 	 * Custom message channel
 	 */
-	class HelloWorldChannel implements MessageReceivedCallback {
+	class MicrogramCasterChannel implements MessageReceivedCallback {
 
 		/**
 		 * @return custom namespace

@@ -39,10 +39,28 @@ var microgramcaster = new function() {
 	window.messageBus.onMessage = function (event) {
 		console.log('Message [' + event.senderId + ']: ' + event.data);
 		// display the message from the sender
-        microgramcaster.displayText(event.data);
-        playVideo(event.data);
-		// inform all senders on the CastMessageBus of the incoming message event
-		// sender message listener will be invoked
+        //microgramcaster.displayText(event.data);
+        var command = cmd.parse(event.data);
+        switch(command.id) {
+            case "PLAY_URL":
+                videoplayer.playUrl(command.params.url);
+                break;
+            case "PLAY":
+                videoplayer.play();
+                break;
+            case "PAUSE":
+                videoplayer.pause();
+                break;
+            case "ADD_TO_PLAYLIST":
+                videoplayer.addToPlaylist(command.params.url);
+                break;
+            default:
+                microgramcaster.displayText("Unknown or unparsable command: " + event.data);
+                break;
+        }
+        //playVideo(event.data);
+
+        // Echo everything back to all attached senders
 		window.messageBus.send(event.senderId, event.data);
 	}
 
@@ -54,7 +72,7 @@ var microgramcaster = new function() {
     // utility function to display the text message in the input field
     this.displayText = function(text) {
         console.log(text);
-		
+        $('#message').clearQueue();
         $('#message').text(text);
 		$('#message').css('opacity','1.0');
 		$('#message').animate({'opacity':0.0}, 4000);

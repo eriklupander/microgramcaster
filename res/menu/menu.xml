@@ -22,19 +22,19 @@ app:showAsAction="always"
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" >
-    <!-- 
+   
      <item
-        android:id="@+id/action_settings"
-        android:title="@string/settings"
-        android:icon="@drawable/ic_menu_settings_holo_light"
+        android:id="@+id/action_play"
+        android:title="@string/play"
+        android:icon="@drawable/ic_media_play"
         app:showAsAction="always" /> 
     
     <item
-        android:id="@+id/action_refresh"
-        android:title="@string/refresh"
-        android:icon="@drawable/ic_menu_refresh"
+        android:id="@+id/action_pause"
+        android:title="@string/pause"
+        android:icon="@drawable/ic_media_pause"
         app:showAsAction="always" />   
-        
+       <!--   
      <item
         android:id="@+id/action_slideshow"
         android:title="@string/slideshow"

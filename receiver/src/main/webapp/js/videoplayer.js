@@ -1,37 +1,74 @@
-$("video").bind("ended", function() {
-   microgramcaster.displayText('Playback finished');
-});
-$("video").bind("play", function() {
-	var file = $('video').attr('src');
-	var playedObject = document.getElementById('video');
-	var curr = playedObject.currentTime;
-	var dur = playedObject.duration;
-	moment().format('HH:mm:ss')
-    microgramcaster.displayText('Playing \'' + file + '\' ' + humanizeDuration(curr) + ' of ' + humanizeDuration(dur));
-});
+var videoplayer = new function() {
 
-$("video").bind("loadstart", function() {
-	microgramcaster.displayText('Starting to load ' + $('video').attr('src'));
-});
 
-$("video").bind("progress", function() {
-	microgramcaster.displayText('Buffering ' + $('video').attr('src') + "...");
-});
+    $("video").bind("pause", function() {
+        var playedObject = document.getElementById('video');
+        var curr = playedObject.currentTime;
+        var dur = playedObject.duration;
+        moment().format('HH:mm:ss')
+        microgramcaster.displayText(humanizeDuration(curr) + ' of ' + humanizeDuration(dur));
 
-function humanizeDuration(input, units ) { 
-  // units is a string with possible values of y, M, w, d, h, m, s, ms
-  var duration = moment().startOf('day').add('s', input),
-    format = "";
+    });
+    $("video").bind("ended", function() {
+       microgramcaster.displayText('Playback finished');
+        setTimeout(function() {$('#splash').css('display','block')}, 5000);
+    });
+    $("video").bind("play", function() {
+        $('#splash').css('display', 'none');
+        var file = $('video').attr('src');
+        var playedObject = document.getElementById('video');
+        var curr = playedObject.currentTime;
+        var dur = playedObject.duration;
+        moment().format('HH:mm:ss')
+        microgramcaster.displayText('Playing \'' + file + '\' ' + humanizeDuration(curr) + ' of ' + humanizeDuration(dur));
+    });
 
-  if(duration.hour() > 0){ format += "HH:"; }
+    $("video").bind("loadstart", function() {
+        microgramcaster.displayText('Starting to load ' + $('video').attr('src'));
+    });
 
-  //if(duration.minute() > 0){ format += "mm:"; }
+    $("video").bind("progress", function() {
+        // TODO perhaps add a tiny little loading spinner somewhere...
+        //microgramcaster.displayText('Buffering ' + $('video').attr('src') + "...");
+    });
 
-  format += "mm:ss";
+    var humanizeDuration = function(input, units ) {
+      // units is a string with possible values of y, M, w, d, h, m, s, ms
+      var duration = moment().startOf('day').add('s', input),
+        format = "";
 
-  return duration.format(format);
-}
+      if(duration.hour() > 0){ format += "HH:"; }
 
-function playVideo(url) {
-    $('#video').attr('src',url);
-}
+      //if(duration.minute() > 0){ format += "mm:"; }
+
+      format += "mm:ss";
+
+      return duration.format(format);
+    }
+
+    var playVideo = function(url) {
+        $('#splash').css('display', 'none');
+        $('#video').attr('src',url);
+    }
+
+
+    this.play = function() {
+        $('#splash').css('display', 'none');
+        var player = document.getElementById('video');
+        player.play();
+    };
+
+    this.pause = function() {
+        var player = document.getElementById('video');
+        player.pause();
+    };
+
+    this.playUrl = function(url) {
+        $('#video').attr('src',url);
+    };
+
+    this.addToPlaylist = function(url) {
+        $('#video').append('<source src="'+url+'" type="video/mp4"/>');
+    };
+
+};

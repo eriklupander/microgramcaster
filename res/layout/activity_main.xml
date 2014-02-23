@@ -25,4 +25,14 @@
         android:layout_centerHorizontal="true" >
     </ListView>
 
+    <MediaController
+        android:id="@+id/mediaController1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/videoFiles"
+        android:layout_alignRight="@+id/videoFiles"
+        android:layout_alignTop="@+id/textView1" >
+
+    </MediaController>
+    
 </RelativeLayout>

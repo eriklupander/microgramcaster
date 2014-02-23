@@ -3,6 +3,8 @@
 
     <string name="app_name">MicrogramCaster</string>
     <string name="media_route_menu_title">Cast to</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
     <string name="status">Status</string>
     <string name="refresh">Refresh</string>
     <string name="settings">Settings</string>
