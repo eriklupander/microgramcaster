@@ -73,7 +73,7 @@ var microgramcaster = new function() {
     this.displayText = function(text) {
         console.log(text);
         $('#message').clearQueue();
-        $('#message').text(text);
+        $('#message').html(text);
 		$('#message').css('opacity','1.0');
 		$('#message').animate({'opacity':0.0}, 4000);
 		

@@ -1,7 +1,10 @@
 var videoplayer = new function() {
 
+	var currentPositionRef = null;
+	var currentPositionCount = 0;
 
     $("video").bind("pause", function() {
+		if(currentPositionRef != null) window.clearTimeout(currentPositionRef);
         var playedObject = document.getElementById('video');
         var curr = playedObject.currentTime;
         var dur = playedObject.duration;
@@ -10,7 +13,8 @@ var videoplayer = new function() {
 
     });
     $("video").bind("ended", function() {
-       microgramcaster.displayText('Playback finished');
+		if(currentPositionRef != null) window.clearTimeout(currentPositionRef);
+		microgramcaster.displayText('Playback finished');
         setTimeout(function() {$('#splash').css('display','block')}, 5000);
     });
     $("video").bind("play", function() {
@@ -20,7 +24,17 @@ var videoplayer = new function() {
         var curr = playedObject.currentTime;
         var dur = playedObject.duration;
         moment().format('HH:mm:ss')
-        microgramcaster.displayText('Playing \'' + file + '\' ' + humanizeDuration(curr) + ' of ' + humanizeDuration(dur));
+        microgramcaster.displayText('Playing \'' + file + '\' <span id="currentPosition">' + humanizeDuration(curr) + '</span> of ' + humanizeDuration(dur));
+		currentPositionCount = 0;
+		currentPositionRef = setInterval(function() {
+			var playedObject = document.getElementById('video');
+			var curr = playedObject.currentTime;
+			$('#currentPosition').text(humanizeDuration(curr));
+			currentPositionCount++;
+			if(currentPositionCount > 4) {
+				window.clearTimeout(currentPositionRef);
+			}
+		}, 1000);
     });
 
     $("video").bind("loadstart", function() {
@@ -37,10 +51,9 @@ var videoplayer = new function() {
       var duration = moment().startOf('day').add('s', input),
         format = "";
 
-      if(duration.hour() > 0){ format += "HH:"; }
-
-      //if(duration.minute() > 0){ format += "mm:"; }
-
+      if(duration.hour() > 0){ 
+		format += "HH:"; 
+	  }
       format += "mm:ss";
 
       return duration.format(format);
