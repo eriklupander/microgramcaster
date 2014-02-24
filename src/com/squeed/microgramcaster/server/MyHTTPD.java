@@ -10,8 +10,8 @@ import java.util.Map;
 import android.content.Context;
 import android.net.Uri;
 
-import com.squeed.microgramcaster.MediaItem;
-import com.squeed.microgramcaster.MediaStoreAdapter;
+import com.squeed.microgramcaster.media.MediaItem;
+import com.squeed.microgramcaster.media.MediaStoreAdapter;
 
 import fi.iki.elonen.NanoHTTPD;
 

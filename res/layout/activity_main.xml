@@ -21,18 +21,19 @@
         android:id="@+id/videoFiles"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_above="@+id/seekBar1"
         android:layout_below="@+id/textView1"
-        android:layout_centerHorizontal="true" >
+        android:layout_centerHorizontal="true"
+        android:choiceMode="singleChoice" >
+
     </ListView>
+    
 
-    <MediaController
-        android:id="@+id/mediaController1"
-        android:layout_width="wrap_content"
+    <SeekBar
+        android:id="@+id/seekBar1"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/videoFiles"
-        android:layout_alignRight="@+id/videoFiles"
-        android:layout_alignTop="@+id/textView1" >
-
-    </MediaController>
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true" />
     
 </RelativeLayout>

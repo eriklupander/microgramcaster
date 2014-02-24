@@ -2,6 +2,7 @@ package com.squeed.microgramcaster;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.channels.FileChannel;
 import java.util.List;
 
 import org.json.JSONException;
@@ -10,21 +11,25 @@ import org.json.JSONObject;
 import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.MediaRouteActionProvider;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
+import android.transition.Visibility;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,6 +44,9 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.cast.JsonUtils;
+import com.squeed.microgramcaster.media.IsoFileUtil;
+import com.squeed.microgramcaster.media.MediaItem;
+import com.squeed.microgramcaster.media.MediaStoreAdapter;
 import com.squeed.microgramcaster.server.MyHTTPD;
 import com.squeed.microgramcaster.server.WebServerService;
 import com.squeed.microgramcaster.util.WifiHelper;
@@ -77,8 +85,9 @@ public class MainActivity extends ActionBarActivity {
 	private boolean mWaitingForReconnect;
 
 	private MenuItem playIcon;
-
 	private MenuItem pauseIcon;
+	
+	private SeekBar seekBar;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +101,12 @@ public class MainActivity extends ActionBarActivity {
 		startWebServer();
 		initMediaRouter();
 		listVideoFiles();
+		initSeekBar();
+	}
+
+	private void initSeekBar() {
+		seekBar = (SeekBar) findViewById(R.id.seekBar1);
+		seekBar.setVisibility(SeekBar.INVISIBLE);
 	}
 
 	@Override
@@ -126,9 +141,28 @@ public class MainActivity extends ActionBarActivity {
 				.build();
 		mMediaRouterCallback = new MediaRouterCallback();
 	}
+	
+	
+	int currentSeekbarPosition = 0;
+	Handler seekBarHandler = new Handler();
+	Runnable run = new Runnable() {
+		 
+        @Override
+        public void run() {
+            updateSeekBar();
+        }
+    };
+ 
+    public void updateSeekBar() {
+ 
+        seekBar.setProgress(currentSeekbarPosition++);
+        seekBarHandler.postDelayed(run, 1000);
+    }
+ 
 
+	
 	private void listVideoFiles() {
-		MediaStoreAdapter mediaStoreAdapter = new MediaStoreAdapter();
+		final MediaStoreAdapter mediaStoreAdapter = new MediaStoreAdapter();
 		List<String> mp4Files = mediaStoreAdapter.findFiles(this, "%");
 		ListView listView = (ListView) findViewById(com.squeed.microgramcaster.R.id.videoFiles);
 		ListAdapter listAdapter = new ArrayAdapter<String>(this,
@@ -139,13 +173,39 @@ public class MainActivity extends ActionBarActivity {
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 					long arg3) {
+				
+				
+				
+				
+				arg0.setSelected(true);
 				String fileName = ((TextView)arg1).getText().toString();
+				MediaItem mi = mediaStoreAdapter.findFile(MainActivity.this, fileName);
+				Long durationMillis = mi.getDuration();
+				seekBar.setVisibility(SeekBar.VISIBLE);				
+				seekBar.setMax((int) (durationMillis/1000L));
+				
+				currentSeekbarPosition = 0;
+				updateSeekBar();
+				
 				sendMessage(PlayerCmdFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));
 				pauseIcon.setVisible(true);
 			}
 		};
 		listView.setOnItemClickListener(listener);
-		
+		OnItemLongClickListener lcListener = new OnItemLongClickListener() {
+
+			@Override
+			public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
+					int arg2, long arg3) {
+				String fileName = ((TextView)arg1).getText().toString();
+				FileChannel fileChannel = mediaStoreAdapter.getFileChannel(MainActivity.this, fileName);
+				String txt =  IsoFileUtil.getInfo(fileChannel);
+				Log.i(TAG, txt);
+				Toast.makeText(MainActivity.this, txt, Toast.LENGTH_LONG).show();
+				return true;
+			}
+		};
+		listView.setOnItemLongClickListener(lcListener);
 	}
 
 	
@@ -163,8 +223,23 @@ public class MainActivity extends ActionBarActivity {
 				.findItem(com.squeed.microgramcaster.R.id.media_route_menu_item);
 		MediaRouteActionProvider mediaRouteActionProvider = (MediaRouteActionProvider) MenuItemCompat
 				.getActionProvider(mediaRouteMenuItem);
+		
+		
 		// Set the MediaRouteActionProvider selector for device discovery.
-		mediaRouteActionProvider.setRouteSelector(mMediaRouteSelector);
+		if(mediaRouteActionProvider != null) mediaRouteActionProvider.setRouteSelector(mMediaRouteSelector);
+		
+		
+		
+		
+		MenuItem refreshIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_refresh);
+		refreshIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+			
+			@Override
+			public boolean onMenuItemClick(MenuItem item) {
+				listVideoFiles();
+				return false;
+			}
+		});
 		
 		playIcon = menu
 				.findItem(com.squeed.microgramcaster.R.id.action_play);
@@ -277,6 +352,8 @@ public class MainActivity extends ActionBarActivity {
 		}
 		mSelectedDevice = null;
 		mWaitingForReconnect = false;
+		playIcon.setVisible(false);
+		pauseIcon.setVisible(false);
 	}
 
 	/**
@@ -386,6 +463,8 @@ public class MainActivity extends ActionBarActivity {
 		public void onConnectionSuspended(int cause) {
 			Log.d(TAG, "onConnectionSuspended");
 			mWaitingForReconnect = true;
+			playIcon.setVisible(false);
+			pauseIcon.setVisible(false);
 		}
 	}
 	

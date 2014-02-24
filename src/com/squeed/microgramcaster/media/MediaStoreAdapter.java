@@ -1,5 +1,9 @@
-package com.squeed.microgramcaster;
+package com.squeed.microgramcaster.media;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.nio.channels.FileChannel;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -8,6 +12,7 @@ import java.util.List;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.database.Cursor;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 
@@ -54,7 +59,8 @@ public class MediaStoreAdapter {
 				MediaStore.Video.Media.DISPLAY_NAME, 
 				MediaStore.Video.Media.DATA, 
 				MediaStore.Video.Media.SIZE,
-				MediaStore.Video.Media.DATE_MODIFIED};
+				MediaStore.Video.Media.DATE_MODIFIED,
+				MediaStore.Video.Media.DURATION};
 		Cursor cur = context.getContentResolver().query(
 			    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, 
 			    retCol, 
@@ -68,6 +74,7 @@ public class MediaStoreAdapter {
 				mi.setData(cur.getString(2));
 				mi.setSize(cur.getLong(3));
 				mi.setLastModified(headerDateFormat.format(new Date(cur.getLong(4))));
+				mi.setDuration(cur.getLong(5));
 				return mi;
 			}
 			return null;
@@ -78,6 +85,45 @@ public class MediaStoreAdapter {
 		} finally {
 			cur.close();
 		}
+	}
+	
+	public String getFileDataPath(Context context, String requestedFile) {
+		requestedFile = requestedFile.replaceAll("%20", " ");
+		String[] retCol = { 
+				MediaStore.Video.Media.DATA};
+		Cursor cur = context.getContentResolver().query(
+			    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, 
+			    retCol, 
+			    MediaStore.MediaColumns.DISPLAY_NAME + "='" + requestedFile + "'", null, null); //MediaStore.MediaColumns.DATA + "='" + filePath + "'"
+		try {
+			if (cur.moveToNext()) {
+				return cur.getString(0);
+			}
+			return null;
+
+		} catch (Exception e) {
+			Log.e("MediaStoreAdapter", "Error fetching MediaStore item, returning null. Error: " + e.getMessage());
+			return null;
+		} finally {
+			cur.close();
+		}
+	}
+	
+	public FileChannel getFileChannel(Context context, String requestedFile) {
+		String fullPathToFile = getFileDataPath(context, requestedFile);
+		if(fullPathToFile != null) {
+			File sd = Environment.getExternalStorageDirectory();
+	        if (sd.canRead()) {
+
+	            File source = new File(fullPathToFile );
+	            try {
+					return new FileInputStream(source).getChannel();
+				} catch (FileNotFoundException e) {
+					return null;
+				}
+	        }
+		}
+		return null;
 	}
 
 }

@@ -5,7 +5,7 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
-import com.squeed.microgramcaster.MediaStoreAdapter;
+import com.squeed.microgramcaster.media.MediaStoreAdapter;
 import com.squeed.microgramcaster.util.WifiHelper;
 
 /**
