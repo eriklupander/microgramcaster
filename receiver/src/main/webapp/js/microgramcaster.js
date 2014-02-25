@@ -1,5 +1,7 @@
 var microgramcaster = new function() {
 
+    var senderId;
+
 	cast.receiver.logger.setLevelValue(0);
 	window.castReceiverManager = cast.receiver.CastReceiverManager.getInstance();
 	console.log('Starting Receiver Manager');
@@ -37,30 +39,60 @@ var microgramcaster = new function() {
 
 	// handler for the CastMessageBus message event
 	window.messageBus.onMessage = function (event) {
+        senderId = event.senderId;
 		console.log('Message [' + event.senderId + ']: ' + event.data);
 		// display the message from the sender
         //microgramcaster.displayText(event.data);
         var command = cmd.parse(event.data);
         switch(command.id) {
-            case "PLAY_URL":
+            case "CMD_PLAY_URL":
                 videoplayer.playUrl(command.params.url);
+
+                var rsp = {
+                    "type":"event",
+                    "eventId":"EVENT_PLAYING",
+                    "currentPosition": videoplayer.getCurrentPosition()
+                };
+                window.messageBus.send(event.senderId, JSON.stringify(rsp));
                 break;
-            case "PLAY":
+            case "CMD_PLAY":
                 videoplayer.play();
+
+                var rsp = {
+                    "type":"event",
+                    "eventId":"EVENT_PLAYING",
+                    "currentPosition": videoplayer.getCurrentPosition()
+                };
+                window.messageBus.send(event.senderId, JSON.stringify(rsp));
                 break;
-            case "PAUSE":
+            case "CMD_PAUSE":
                 videoplayer.pause();
+
+                var rsp = {
+                    "type":"event",
+                    "eventId":"EVENT_PAUSED",
+                    "currentPosition": videoplayer.getCurrentPosition()
+                };
+                window.messageBus.send(event.senderId, JSON.stringify(rsp));
                 break;
-            case "ADD_TO_PLAYLIST":
+            case "CMD_ADD_TO_PLAYLIST":
                 videoplayer.addToPlaylist(command.params.url);
                 break;
-			case "SEEK_POSITION":
-				videoplayer.seek(command.params.positionSeconds);
+			case "CMD_SEEK_POSITION":
+				videoplayer.seek(command.params.currentPosition);
+                var rsp = {
+                    "type":"response",
+                    "responseId":"REQUESTED_POSITION",
+                    "currentPosition": videoplayer.getCurrentPosition()
+                };
+                window.messageBus.send(event.senderId, JSON.stringify(rsp));
 				break;
-			case "GET_CURRENT_POSITION":
-				var positionSeconds = videoplayer.getCurrentPosition();
+			case "CMD_REQUEST_POSITION":
+
 				var rsp = {
-					"currentPosition": positionSeconds;
+                    "type":"response",
+                    "responseId":"REQUESTED_POSITION",
+					"currentPosition": videoplayer.getCurrentPosition()
 				};
 				window.messageBus.send(event.senderId, JSON.stringify(rsp));
 				break;
@@ -71,7 +103,7 @@ var microgramcaster = new function() {
         //playVideo(event.data);
 
         // Echo everything back to all attached senders
-		window.messageBus.send(event.senderId, event.data);
+		//window.messageBus.send(event.senderId, event.data);
 	}
 
 	// initialize the CastReceiverManager with an application status message
@@ -88,6 +120,10 @@ var microgramcaster = new function() {
 		$('#message').animate({'opacity':0.0}, 4000);
 		
         window.castReceiverManager.setApplicationState(text);
+    };
+
+    this.sendEvent = function(evt) {
+        window.messageBus.send(senderId, evt);
     };
 	
 };

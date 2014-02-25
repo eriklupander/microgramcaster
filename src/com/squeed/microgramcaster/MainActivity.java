@@ -1,7 +1,6 @@
 package com.squeed.microgramcaster;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.channels.FileChannel;
 import java.util.List;
 
@@ -18,7 +17,6 @@ import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.MediaRouteActionProvider;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
-import android.transition.Visibility;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -36,19 +34,21 @@ import android.widget.Toast;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.Cast;
 import com.google.android.gms.cast.Cast.ApplicationConnectionResult;
-import com.google.android.gms.cast.Cast.MessageReceivedCallback;
 import com.google.android.gms.cast.CastDevice;
 import com.google.android.gms.cast.CastMediaControlIntent;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-import com.google.cast.JsonUtils;
+import com.squeed.microgramcaster.channel.Command;
+import com.squeed.microgramcaster.channel.CommandFactory;
+import com.squeed.microgramcaster.channel.MicrogramCasterChannel;
 import com.squeed.microgramcaster.media.IsoFileUtil;
 import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaStoreAdapter;
 import com.squeed.microgramcaster.server.MyHTTPD;
 import com.squeed.microgramcaster.server.WebServerService;
+import com.squeed.microgramcaster.util.TimeFormatter;
 import com.squeed.microgramcaster.util.WifiHelper;
 
 /**
@@ -67,8 +67,7 @@ public class MainActivity extends ActionBarActivity {
 	private static final String TAG = "MainActivity";
 
 	private static final String APP_NAME = "4E4599F7";
-	private static final String PROTOCOL = "urn:x-cast:com.squeed.microgramcaster";
-
+	
 	private CastDevice mSelectedDevice;
 	private MediaRouter mMediaRouter;
 	private MediaRouteSelector mMediaRouteSelector;
@@ -89,6 +88,9 @@ public class MainActivity extends ActionBarActivity {
 	
 	private SeekBar seekBar;
 
+	private TextView currentPosition;
+	private TextView totalDuration;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -105,25 +107,30 @@ public class MainActivity extends ActionBarActivity {
 	}
 
 	private void initSeekBar() {
+		currentPosition = (TextView) findViewById(R.id.currentPosition);
+		totalDuration = (TextView) findViewById(R.id.totalDuration);
 		seekBar = (SeekBar) findViewById(R.id.seekBar1);
 		seekBar.setVisibility(SeekBar.INVISIBLE);
 		seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-				if(!fromUser) {
-					
-				}
+				//if(!fromUser) {
+					currentPosition.setText(TimeFormatter.formatTime(progress));
+				//}
 			}
 			
 			public void onStartTrackingTouch (SeekBar seekBar) {
-				seekBarHandler.removeCallbacks(run);
+				
 			}
 			
 			public void onStopTrackingTouch (SeekBar seekBar) {
-			
+				seekBarHandler.removeCallbacksAndMessages(null);
+				sendMessage(CommandFactory.buildSeekPositionCommand(seekBar.getProgress()));
 			}
 			
 		});
 	}
+
+	
 
 	@Override
 	protected void onResume() {
@@ -169,12 +176,39 @@ public class MainActivity extends ActionBarActivity {
         }
     };
  
-    public void updateSeekBar() {
- 
+    public void updateSeekBar() { 
+    	currentPosition.setVisibility(TextView.VISIBLE);
         seekBar.setProgress(currentSeekbarPosition++);
         seekBarHandler.postDelayed(run, 1000);
     }
+    
+    public void onEventPlaying(int positionSeconds) {
+    	currentSeekbarPosition = positionSeconds;
+    	seekBarHandler.removeCallbacksAndMessages(null);
+    	updateSeekBar();
+    	playIcon.setVisible(false);
+		pauseIcon.setVisible(true);
+    }
+    
+    public void onEventPaused(int positionSeconds) {
+    	currentSeekbarPosition = positionSeconds;
+    	seekBarHandler.removeCallbacksAndMessages(null);
+    	playIcon.setVisible(true);
+		pauseIcon.setVisible(false);
+    }
  
+    public void onEventFinished() {
+    	currentSeekbarPosition = 0;
+    	seekBarHandler.removeCallbacksAndMessages(null);
+    	playIcon.setVisible(false);
+		pauseIcon.setVisible(false);
+    }
+    
+    public void onRequestedPosition(int positionSeconds) {
+    	currentSeekbarPosition = positionSeconds;
+    	seekBarHandler.removeCallbacksAndMessages(null);
+    	updateSeekBar();
+	}
 
 	
 	private void listVideoFiles() {
@@ -189,9 +223,11 @@ public class MainActivity extends ActionBarActivity {
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 					long arg3) {
-				
-				
-				
+				if(mSelectedDevice == null || !mApiClient.isConnected()) {
+					Toast.makeText(MainActivity.this, "No cast device selected", Toast.LENGTH_SHORT).show();
+					initMediaRouter();
+					return;
+				}
 				
 				arg0.setSelected(true);
 				String fileName = ((TextView)arg1).getText().toString();
@@ -199,11 +235,13 @@ public class MainActivity extends ActionBarActivity {
 				Long durationMillis = mi.getDuration();
 				seekBar.setVisibility(SeekBar.VISIBLE);				
 				seekBar.setMax((int) (durationMillis/1000L));
-				
+				currentPosition.setText(TimeFormatter.formatTime(0));
+				currentPosition.setVisibility(TextView.VISIBLE);
+				totalDuration.setText(TimeFormatter.formatTime((int) (durationMillis/1000L)));
+				totalDuration.setVisibility(TextView.VISIBLE);
 				currentSeekbarPosition = 0;
-				updateSeekBar();
 				
-				sendMessage(PlayerCmdFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));
+				sendMessage(CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));
 				pauseIcon.setVisible(true);
 			}
 		};
@@ -245,8 +283,6 @@ public class MainActivity extends ActionBarActivity {
 		if(mediaRouteActionProvider != null) mediaRouteActionProvider.setRouteSelector(mMediaRouteSelector);
 		
 		
-		
-		
 		MenuItem refreshIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_refresh);
 		refreshIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
 			
@@ -263,9 +299,7 @@ public class MainActivity extends ActionBarActivity {
 			
 			@Override
 			public boolean onMenuItemClick(MenuItem item) {
-				sendMessage(PlayerCmdFactory.buildPlayCommand());
-				playIcon.setVisible(false);
-				pauseIcon.setVisible(true);
+				sendMessage(CommandFactory.buildPlayCommand());				
 				return false;
 			}
 		});
@@ -275,7 +309,7 @@ public class MainActivity extends ActionBarActivity {
 			
 			@Override
 			public boolean onMenuItemClick(MenuItem item) {
-				sendMessage(PlayerCmdFactory.buildPauseCommand());
+				sendMessage(CommandFactory.buildPauseCommand());
 				playIcon.setVisible(true);
 				pauseIcon.setVisible(false);
 				return false;
@@ -445,7 +479,7 @@ public class MainActivity extends ActionBarActivity {
 
 												// Create the custom message
 												// channel
-												mHelloWorldChannel = new MicrogramCasterChannel();
+												mHelloWorldChannel = new MicrogramCasterChannel(MainActivity.this);
 												try {
 													Cast.CastApi
 															.setMessageReceivedCallbacks(
@@ -484,7 +518,7 @@ public class MainActivity extends ActionBarActivity {
 		}
 	}
 	
-	private void sendMessage(PlayerCmd cmd) {
+	private void sendMessage(Command cmd) {
 		try {
 			JSONObject obj = new JSONObject();
 			obj.put("id", cmd.getId());
@@ -551,28 +585,4 @@ public class MainActivity extends ActionBarActivity {
 			teardown();
 		}
 	}
-
-	/**
-	 * Custom message channel
-	 */
-	class MicrogramCasterChannel implements MessageReceivedCallback {
-
-		/**
-		 * @return custom namespace
-		 */
-		public String getNamespace() {
-			return PROTOCOL;
-		}
-
-		/*
-		 * Receive message from the receiver app
-		 */
-		@Override
-		public void onMessageReceived(CastDevice castDevice, String namespace,
-				String message) {
-			Log.d(TAG, "onMessageReceived: " + message);
-		}
-
-	}
-
 }

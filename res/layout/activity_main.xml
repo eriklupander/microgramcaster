@@ -21,19 +21,42 @@
         android:id="@+id/videoFiles"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/seekBar1"
+        android:layout_above="@+id/linearLayout1"
         android:layout_below="@+id/textView1"
         android:layout_centerHorizontal="true"
         android:choiceMode="singleChoice" >
-
     </ListView>
-    
 
-    <SeekBar
-        android:id="@+id/seekBar1"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true" />
-    
+        android:layout_alignParentLeft="true"
+        android:layout_alignRight="@+id/videoFiles"
+        android:gravity="center" >
+
+        <TextView
+            android:id="@+id/currentPosition"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--:--:--"
+            android:textSize="12sp"
+            android:visibility="visible" />
+
+        <SeekBar
+            android:id="@+id/seekBar1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/totalDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--:--:--"
+            android:textSize="12sp"
+            android:visibility="visible" />
+    </LinearLayout>
+
 </RelativeLayout>

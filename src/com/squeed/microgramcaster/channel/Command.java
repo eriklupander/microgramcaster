@@ -1,18 +1,18 @@
-package com.squeed.microgramcaster;
+package com.squeed.microgramcaster.channel;
 
 import java.io.Serializable;
 import java.util.HashMap;
 
-public class PlayerCmd implements Serializable {
+public class Command implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
 	private String id;
 	private HashMap<String,String> params = new HashMap<String, String>();
 	
-	public PlayerCmd() {} // no-args for serialization, if necessary...for now.
+	public Command() {} // no-args for serialization, if necessary...for now.
 	
-	public PlayerCmd(String id) {
+	public Command(String id) {
 		this.id = id;		
 	}
 	

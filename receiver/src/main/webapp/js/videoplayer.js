@@ -5,30 +5,32 @@ var videoplayer = new function() {
 
     $("video").bind("pause", function() {
 		if(currentPositionRef != null) window.clearTimeout(currentPositionRef);
-        var playedObject = document.getElementById('video');
-        var curr = playedObject.currentTime;
-        var dur = playedObject.duration;
+        var playerObject = document.getElementById('video');
+        var curr = playerObject.currentTime;
+        var dur = playerObject.duration;
         moment().format('HH:mm:ss')
         microgramcaster.displayText(humanizeDuration(curr) + ' of ' + humanizeDuration(dur));
 
     });
+
     $("video").bind("ended", function() {
 		if(currentPositionRef != null) window.clearTimeout(currentPositionRef);
 		microgramcaster.displayText('Playback finished');
         setTimeout(function() {$('#splash').css('display','block')}, 5000);
     });
+
     $("video").bind("play", function() {
         $('#splash').css('display', 'none');
         var file = $('video').attr('src');
-        var playedObject = document.getElementById('video');
-        var curr = playedObject.currentTime;
-        var dur = playedObject.duration;
+        var playerObject = document.getElementById('video');
+        var curr = playerObject.currentTime;
+        var dur = playerObject.duration;
         moment().format('HH:mm:ss')
         microgramcaster.displayText('Playing \'' + file + '\' <span id="currentPosition">' + humanizeDuration(curr) + '</span> of ' + humanizeDuration(dur));
 		currentPositionCount = 0;
 		currentPositionRef = setInterval(function() {
-			var playedObject = document.getElementById('video');
-			var curr = playedObject.currentTime;
+			var playerObject = document.getElementById('video');
+			var curr = playerObject.currentTime;
 			$('#currentPosition').text(humanizeDuration(curr));
 			currentPositionCount++;
 			if(currentPositionCount > 4) {
@@ -42,7 +44,27 @@ var videoplayer = new function() {
     });
 	
 	$("video").bind("seeking", function() {
-        microgramcaster.displayText('Seeking...');
+        var playerObject = document.getElementById('video');
+        var curr = playerObject.currentTime;
+        var dur = playerObject.duration;
+
+        microgramcaster.displayText('Seeking ' + humanizeDuration(curr) + ' of ' + humanizeDuration(dur) + '...');
+    });
+
+    $("video").bind("seeked", function() {
+        var playerObject = document.getElementById('video');
+        var curr = playerObject.currentTime;
+        var dur = playerObject.duration;
+        playerObject.play();
+
+        microgramcaster.displayText(humanizeDuration(curr) + ' of ' + humanizeDuration(dur) + '...');
+        microgramcaster.sendEvent(
+            {
+            "type":"event",
+            "eventId":"EVENT_PLAYING",
+            "currentPosition": curr
+            }
+        );
     });
 
     $("video").bind("progress", function() {
