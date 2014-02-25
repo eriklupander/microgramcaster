@@ -54,6 +54,16 @@ var microgramcaster = new function() {
             case "ADD_TO_PLAYLIST":
                 videoplayer.addToPlaylist(command.params.url);
                 break;
+			case "SEEK_POSITION":
+				videoplayer.seek(command.params.positionSeconds);
+				break;
+			case "GET_CURRENT_POSITION":
+				var positionSeconds = videoplayer.getCurrentPosition();
+				var rsp = {
+					"currentPosition": positionSeconds;
+				};
+				window.messageBus.send(event.senderId, JSON.stringify(rsp));
+				break;
             default:
                 microgramcaster.displayText("Unknown or unparsable command: " + event.data);
                 break;

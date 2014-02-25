@@ -40,6 +40,10 @@ var videoplayer = new function() {
     $("video").bind("loadstart", function() {
         microgramcaster.displayText('Starting to load ' + $('video').attr('src'));
     });
+	
+	$("video").bind("seeking", function() {
+        microgramcaster.displayText('Seeking...');
+    });
 
     $("video").bind("progress", function() {
         // TODO perhaps add a tiny little loading spinner somewhere...
@@ -83,5 +87,14 @@ var videoplayer = new function() {
     this.addToPlaylist = function(url) {
         $('#video').append('<source src="'+url+'" type="video/mp4"/>');
     };
-
+	
+	this.seek = function(positionSeconds) {
+		var player = document.getElementById('video');
+		player.currentTime = positionSeconds;
+	};
+	
+	this.getCurrentPosition = function() {
+		var player = document.getElementById('video');
+		return player.currentTime;
+	};
 };

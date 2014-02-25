@@ -107,6 +107,22 @@ public class MainActivity extends ActionBarActivity {
 	private void initSeekBar() {
 		seekBar = (SeekBar) findViewById(R.id.seekBar1);
 		seekBar.setVisibility(SeekBar.INVISIBLE);
+		seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+				if(!fromUser) {
+					
+				}
+			}
+			
+			public void onStartTrackingTouch (SeekBar seekBar) {
+				seekBarHandler.removeCallbacks(run);
+			}
+			
+			public void onStopTrackingTouch (SeekBar seekBar) {
+			
+			}
+			
+		});
 	}
 
 	@Override
