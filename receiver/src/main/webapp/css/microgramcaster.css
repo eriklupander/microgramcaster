@@ -20,3 +20,22 @@ body {
 	width: 1200px;
 	z-index: 999;
 }
+
+.rotate90 {
+    -moz-transform:rotate(90deg);
+    -webkit-transform:rotate(90deg);
+    -o-transform:rotate(90deg);
+    -ms-transform:rotate(90deg);
+    transform:rotate(90deg);
+
+    -webkit-transform-origin: center;
+    -moz-transform-origin: center;
+    -ms-transform-origin: center;
+
+    /* These styles positions the portrait video centrally using available height */
+    width:704px;
+    height:704px;
+    position: absolute;
+    left:280px; /* (1280-720) / 2   */
+
+}

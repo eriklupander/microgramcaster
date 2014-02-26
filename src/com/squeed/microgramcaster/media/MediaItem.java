@@ -1,5 +1,7 @@
 package com.squeed.microgramcaster.media;
 
+import android.graphics.Bitmap;
+
 /**
  * Simple encapsulation of some MediaStore item metadata.
  * @author Erik
@@ -13,6 +15,7 @@ public class MediaItem {
 	private Long size;
 	private String lastModified;
 	private Long duration;
+	private Bitmap bitmap;
 	
 	public Integer getId() {
 		return id;
@@ -49,5 +52,11 @@ public class MediaItem {
 	}
 	public void setDuration(Long duration) {
 		this.duration = duration;
+	}
+	public Bitmap getThumbnail() {
+		return bitmap;
+	}
+	public void setThumbnail(Bitmap bitmap) {
+		this.bitmap = bitmap;
 	}
 }

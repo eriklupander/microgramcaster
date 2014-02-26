@@ -2,6 +2,7 @@ package com.squeed.microgramcaster;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONException;
@@ -213,11 +214,12 @@ public class MainActivity extends ActionBarActivity {
 	
 	private void listVideoFiles() {
 		final MediaStoreAdapter mediaStoreAdapter = new MediaStoreAdapter();
-		List<String> mp4Files = mediaStoreAdapter.findFiles(this, "%");
+		ArrayList<MediaItem> mp4Files = (ArrayList<MediaItem>) mediaStoreAdapter.findFiles(this, "%");
 		ListView listView = (ListView) findViewById(com.squeed.microgramcaster.R.id.videoFiles);
-		ListAdapter listAdapter = new ArrayAdapter<String>(this,
-				android.R.layout.simple_list_item_1, mp4Files);
-		listView.setAdapter(listAdapter);	
+//		ListAdapter listAdapter = new ArrayAdapter<String>(this,
+//				android.R.layout.simple_list_item_1, mp4Files);
+		final ArrayAdapterItem adapter = new ArrayAdapterItem(this, R.layout.listview_item, mp4Files);
+		listView.setAdapter(adapter);	
 		OnItemClickListener listener = new OnItemClickListener() {
 
 			@Override
@@ -229,8 +231,9 @@ public class MainActivity extends ActionBarActivity {
 					return;
 				}
 				
-				arg0.setSelected(true);
-				String fileName = ((TextView)arg1).getText().toString();
+				adapter.setSelectedPosition(arg2);
+				adapter.notifyDataSetChanged();
+				String fileName = (String) arg1.getTag();
 				MediaItem mi = mediaStoreAdapter.findFile(MainActivity.this, fileName);
 				Long durationMillis = mi.getDuration();
 				seekBar.setVisibility(SeekBar.VISIBLE);				
@@ -245,13 +248,16 @@ public class MainActivity extends ActionBarActivity {
 				pauseIcon.setVisible(true);
 			}
 		};
+		
 		listView.setOnItemClickListener(listener);
 		OnItemLongClickListener lcListener = new OnItemLongClickListener() {
 
 			@Override
 			public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
 					int arg2, long arg3) {
-				String fileName = ((TextView)arg1).getText().toString();
+				String fileName = (String) arg1.getTag();
+				adapter.setSelectedPosition(arg2);
+				adapter.notifyDataSetChanged();
 				FileChannel fileChannel = mediaStoreAdapter.getFileChannel(MainActivity.this, fileName);
 				String txt =  IsoFileUtil.getInfo(fileChannel);
 				Log.i(TAG, txt);

@@ -12,6 +12,8 @@ import java.util.List;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -28,28 +30,46 @@ public class MediaStoreAdapter {
 	@SuppressLint("SimpleDateFormat")
 	private static final SimpleDateFormat headerDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
 	
-	public List<String> findFiles(Context context, String filePath) {
-		String[] retCol = { MediaStore.Video.Media._ID, MediaStore.Video.Media.DISPLAY_NAME};
+	public List<MediaItem> findFiles(Context context, String filePath) {
+		String[] retCol = { 
+				MediaStore.Video.Media._ID, 
+				MediaStore.Video.Media.DISPLAY_NAME, 
+				MediaStore.Video.Media.DATA, 
+				MediaStore.Video.Media.SIZE,
+				MediaStore.Video.Media.DATE_MODIFIED,
+				MediaStore.Video.Media.DURATION};
 		Cursor cur = context.getContentResolver().query(
 		    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, 
 		    retCol, 
 		    null, null, null); //MediaStore.MediaColumns.DATA + "='" + filePath + "'" TODO Fix mp4 filtering.
 		if (cur.getCount() == 0) {
-		    return new ArrayList<String>();
+		    return new ArrayList<MediaItem>();
 		}
-		 List<String> names = new ArrayList<String>();
+		 List<MediaItem> mediaItems = new ArrayList<MediaItem>();
 		try {
 			while(cur.moveToNext()) {
-				int id = cur.getInt(0);
-				String displayName = cur.getString(1);
-				names.add(displayName);
+				MediaItem mi = new MediaItem();
+				mi.setId(cur.getInt(0));
+				mi.setName(cur.getString(1));
+				mi.setData(cur.getString(2));
+				mi.setSize(cur.getLong(3));
+				mi.setLastModified(headerDateFormat.format(new Date(cur.getLong(4))));
+				mi.setDuration(cur.getLong(5));
+				
+				 Bitmap bitmap = MediaStore.Video.Thumbnails.getThumbnail(
+						 	context.getContentResolver(),
+						 	mi.getId(),
+			                MediaStore.Video.Thumbnails.MICRO_KIND,
+			                (BitmapFactory.Options) null );
+				 mi.setThumbnail(bitmap);
+				mediaItems.add(mi);
 			}		
 			
 			cur.close();
 		} catch (Exception e) {
 			Log.e("MediaStoreAdapter", "Error fetching MediaStore data, returning empty list. Error: " + e.getMessage());
 		}
-		return names;
+		return mediaItems;
 	}
 
 	public MediaItem findFile(Context context, String requestedFile) {

@@ -96,6 +96,9 @@ var microgramcaster = new function() {
 				};
 				window.messageBus.send(event.senderId, JSON.stringify(rsp));
 				break;
+            case "CMD_TOGGLE_ROTATION":
+                videoplayer.toggleRotation();
+                break;
             default:
                 microgramcaster.displayText("Unknown or unparsable command: " + event.data);
                 break;

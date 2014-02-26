@@ -119,4 +119,12 @@ var videoplayer = new function() {
 		var player = document.getElementById('video');
 		return player.currentTime;
 	};
+
+    this.toggleRotation = function() {
+        if($('#video').hasClass('rotate90')) {
+            $('#video').removeClass('rotate90');
+        } else {
+            $('#video').addClass('rotate90');
+        }
+    }
 };

@@ -16,13 +16,16 @@ public class MicrogramCasterChannel implements MessageReceivedCallback {
 	
 	private MainActivity activity;
 
+	/**
+	 * Construct the channel instance, provide reference to the activity so we can perform
+	 * convenient callbacks.
+	 * 
+	 * @param activity
+	 */
 	public MicrogramCasterChannel(MainActivity activity) {
 		this.activity = activity;		
 	}
 
-	/**
-	 * @return custom namespace
-	 */
 	public String getNamespace() {
 		return PROTOCOL;
 	}
