@@ -79,7 +79,7 @@ public class MainActivity extends ActionBarActivity {
 	private ConnectionCallbacks mConnectionCallbacks;
 	private ConnectionFailedListener mConnectionFailedListener;
 
-	private MicrogramCasterChannel mHelloWorldChannel;
+	private MicrogramCasterChannel mMicrogramCasterChannel;
 
 	private boolean mApplicationStarted;
 	private boolean mWaitingForReconnect;
@@ -114,9 +114,7 @@ public class MainActivity extends ActionBarActivity {
 		seekBar.setVisibility(SeekBar.INVISIBLE);
 		seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-				//if(!fromUser) {
-					currentPosition.setText(TimeFormatter.formatTime(progress));
-				//}
+				currentPosition.setText(TimeFormatter.formatTime(progress));
 			}
 			
 			public void onStartTrackingTouch (SeekBar seekBar) {
@@ -129,6 +127,19 @@ public class MainActivity extends ActionBarActivity {
 			}
 			
 		});
+	}
+	
+	private void showSeekbar() {
+		seekBar.setVisibility(SeekBar.VISIBLE);
+		totalDuration.setVisibility(TextView.VISIBLE);
+		currentPosition.setVisibility(TextView.VISIBLE);
+	}
+	
+	private void hideSeekbar() {
+		seekBarHandler.removeCallbacksAndMessages(null);
+		seekBar.setVisibility(SeekBar.INVISIBLE);
+		totalDuration.setVisibility(TextView.INVISIBLE);
+		currentPosition.setVisibility(TextView.INVISIBLE);
 	}
 
 	
@@ -169,6 +180,7 @@ public class MainActivity extends ActionBarActivity {
 	
 	int currentSeekbarPosition = 0;
 	Handler seekBarHandler = new Handler();
+	
 	Runnable run = new Runnable() {
 		 
         @Override
@@ -201,8 +213,7 @@ public class MainActivity extends ActionBarActivity {
     public void onEventFinished() {
     	currentSeekbarPosition = 0;
     	seekBarHandler.removeCallbacksAndMessages(null);
-    	playIcon.setVisible(false);
-		pauseIcon.setVisible(false);
+    	hideMediaControlIcons();
     }
     
     public void onRequestedPosition(int positionSeconds) {
@@ -216,8 +227,7 @@ public class MainActivity extends ActionBarActivity {
 		final MediaStoreAdapter mediaStoreAdapter = new MediaStoreAdapter();
 		ArrayList<MediaItem> mp4Files = (ArrayList<MediaItem>) mediaStoreAdapter.findFiles(this, "%");
 		ListView listView = (ListView) findViewById(com.squeed.microgramcaster.R.id.videoFiles);
-//		ListAdapter listAdapter = new ArrayAdapter<String>(this,
-//				android.R.layout.simple_list_item_1, mp4Files);
+
 		final ArrayAdapterItem adapter = new ArrayAdapterItem(this, R.layout.listview_item, mp4Files);
 		listView.setAdapter(adapter);	
 		OnItemClickListener listener = new OnItemClickListener() {
@@ -227,7 +237,10 @@ public class MainActivity extends ActionBarActivity {
 					long arg3) {
 				if(mSelectedDevice == null || !mApiClient.isConnected()) {
 					Toast.makeText(MainActivity.this, "No cast device selected", Toast.LENGTH_SHORT).show();
-					initMediaRouter();
+					adapter.setSelectedPosition(-1);
+					adapter.notifyDataSetChanged();
+					mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback,
+							MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
 					return;
 				}
 				
@@ -236,16 +249,19 @@ public class MainActivity extends ActionBarActivity {
 				String fileName = (String) arg1.getTag();
 				MediaItem mi = mediaStoreAdapter.findFile(MainActivity.this, fileName);
 				Long durationMillis = mi.getDuration();
-				seekBar.setVisibility(SeekBar.VISIBLE);				
+					
 				seekBar.setMax((int) (durationMillis/1000L));
-				currentPosition.setText(TimeFormatter.formatTime(0));
-				currentPosition.setVisibility(TextView.VISIBLE);
+				currentPosition.setText(TimeFormatter.formatTime(0));			
 				totalDuration.setText(TimeFormatter.formatTime((int) (durationMillis/1000L)));
-				totalDuration.setVisibility(TextView.VISIBLE);
+		
 				currentSeekbarPosition = 0;
 				
-				sendMessage(CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));
-				pauseIcon.setVisible(true);
+				showSeekbar();
+				if(mApiClient.isConnected()) {
+					sendMessage(CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));
+					pauseIcon.setVisible(true); // TODO move this to the 'playing' callback.	
+				}
+				
 			}
 		};
 		
@@ -299,6 +315,16 @@ public class MainActivity extends ActionBarActivity {
 			}
 		});
 		
+		MenuItem rotateIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_rotate);
+		rotateIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+			
+			@Override
+			public boolean onMenuItemClick(MenuItem item) {
+				sendMessage(CommandFactory.buildToggleRotateCommand());
+				return false;
+			}
+		});
+		
 		playIcon = menu
 				.findItem(com.squeed.microgramcaster.R.id.action_play);
 		playIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
@@ -321,8 +347,7 @@ public class MainActivity extends ActionBarActivity {
 				return false;
 			}
 		});
-		playIcon.setVisible(false);
-		pauseIcon.setVisible(false);
+		hideMediaControlIcons(); 
 		return true;
 	}
 
@@ -346,9 +371,17 @@ public class MainActivity extends ActionBarActivity {
 			Log.i(TAG, "onRouteUnselected: " + route);
 			teardown();
 			mSelectedDevice = null;
-			playIcon.setVisible(false);
-			pauseIcon.setVisible(false);
+			hideMediaControlIcons();
+			hideSeekbar();
+			
 		}
+
+		
+	}
+	
+	private void hideMediaControlIcons() {
+		playIcon.setVisible(false);
+		pauseIcon.setVisible(false);
 	}
 
 	/**
@@ -391,10 +424,10 @@ public class MainActivity extends ActionBarActivity {
 			if (mApplicationStarted) {
 				try {
 					Cast.CastApi.stopApplication(mApiClient);
-					if (mHelloWorldChannel != null) {
+					if (mMicrogramCasterChannel != null) {
 						Cast.CastApi.removeMessageReceivedCallbacks(mApiClient,
-								mHelloWorldChannel.getNamespace());
-						mHelloWorldChannel = null;
+								mMicrogramCasterChannel.getNamespace());
+						mMicrogramCasterChannel = null;
 					}
 				} catch (IOException e) {
 					Log.e(TAG, "Exception while removing channel", e);
@@ -408,8 +441,7 @@ public class MainActivity extends ActionBarActivity {
 		}
 		mSelectedDevice = null;
 		mWaitingForReconnect = false;
-		playIcon.setVisible(false);
-		pauseIcon.setVisible(false);
+		hideMediaControlIcons(); 
 	}
 
 	/**
@@ -442,8 +474,8 @@ public class MainActivity extends ActionBarActivity {
 						try {
 							Cast.CastApi.setMessageReceivedCallbacks(
 									mApiClient,
-									mHelloWorldChannel.getNamespace(),
-									mHelloWorldChannel);
+									mMicrogramCasterChannel.getNamespace(),
+									mMicrogramCasterChannel);
 						} catch (IOException e) {
 							Log.e(TAG, "Exception while creating channel", e);
 						}
@@ -485,14 +517,14 @@ public class MainActivity extends ActionBarActivity {
 
 												// Create the custom message
 												// channel
-												mHelloWorldChannel = new MicrogramCasterChannel(MainActivity.this);
+												mMicrogramCasterChannel = new MicrogramCasterChannel(MainActivity.this);
 												try {
 													Cast.CastApi
 															.setMessageReceivedCallbacks(
 																	mApiClient,
-																	mHelloWorldChannel
+																	mMicrogramCasterChannel
 																			.getNamespace(),
-																	mHelloWorldChannel);
+																	mMicrogramCasterChannel);
 												} catch (IOException e) {
 													Log.e(TAG,
 															"Exception while creating channel",
@@ -519,21 +551,34 @@ public class MainActivity extends ActionBarActivity {
 		public void onConnectionSuspended(int cause) {
 			Log.d(TAG, "onConnectionSuspended");
 			mWaitingForReconnect = true;
-			playIcon.setVisible(false);
-			pauseIcon.setVisible(false);
+			hideMediaControlIcons(); 
+			hideSeekbar();
 		}
 	}
 	
+	
+	
 	private void sendMessage(Command cmd) {
+		if(mSelectedDevice == null || mApiClient == null || (mApiClient != null && !mApiClient.isConnected())) {
+			if(mApiClient != null && mApiClient.isConnecting()) {
+				Toast.makeText(MainActivity.this, "Currently connecting to Cast Device, please try again in a moment...", Toast.LENGTH_LONG)
+			    .show();
+			} else {
+				Toast.makeText(MainActivity.this, "Cast Device not connected, please try to disconnect and connect again", Toast.LENGTH_LONG)
+			    .show();	
+			}
+			
+			return;
+		}
 		try {
 			JSONObject obj = new JSONObject();
 			obj.put("id", cmd.getId());
 			obj.put("params", new JSONObject(cmd.getParams()));
       
-			if (mApiClient != null && mHelloWorldChannel != null) {
+			if (mApiClient != null && mMicrogramCasterChannel != null) {
 			    try {
 			        Cast.CastApi.sendMessage(mApiClient,
-			                mHelloWorldChannel.getNamespace(), obj.toString());
+			                mMicrogramCasterChannel.getNamespace(), obj.toString());
 			    } catch (Exception e) {
 			        Log.e(TAG, "Exception while sending message", e);
 			    }
@@ -547,33 +592,6 @@ public class MainActivity extends ActionBarActivity {
 		    .show();
 		}
 	}
-	
-	/**
-	* Send a text message to the receiver
-	*
-	* @param message
-	*/
-    private void sendMessage(String message) {
-        if (mApiClient != null && mHelloWorldChannel != null) {
-            try {
-                Cast.CastApi.sendMessage(mApiClient,
-                        mHelloWorldChannel.getNamespace(), message)
-                        .setResultCallback(new ResultCallback<Status>() {
-                            @Override
-                            public void onResult(Status result) {
-                                if (!result.isSuccess()) {
-                                    Log.e(TAG, "Sending message failed");
-                                }
-                            }
-                        });
-            } catch (Exception e) {
-                Log.e(TAG, "Exception while sending message", e);
-            }
-        } else {
-            Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT)
-                    .show();
-        }
-    }
 
 	private String buildMediaItemURL(String fileName) {
 		return MyHTTPD.WEB_SERVER_PROTOCOL + "://" + WifiHelper.getLanIP(MainActivity.this) + ":" + MyHTTPD.WEB_SERVER_PORT + "/" + fileName;

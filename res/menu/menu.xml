@@ -33,7 +33,13 @@ app:showAsAction="always"
         android:id="@+id/action_pause"
         android:title="@string/pause"
         android:icon="@drawable/ic_media_pause"
-        app:showAsAction="always" />   
+        app:showAsAction="always" />  
+        
+    <item
+        android:id="@+id/action_rotate"
+        android:title="@string/rotate"
+        android:icon="@drawable/ic_menu_rotate"
+        app:showAsAction="always" />
        
      <item
         android:id="@+id/action_refresh"

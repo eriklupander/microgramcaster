@@ -67,7 +67,7 @@ public class ArrayAdapterItem extends ArrayAdapter<MediaItem> {
         	convertView.setBackgroundResource(R.color.pressed_color);
         }
         else{
-        	convertView.setBackgroundResource(R.color.black);
+        	convertView.setBackgroundResource(android.graphics.Color.TRANSPARENT);
         }
        
         return convertView;

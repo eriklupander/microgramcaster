@@ -34,4 +34,9 @@ public class CommandFactory {
 		return cmd;
 	}
 	
+	public static Command buildToggleRotateCommand() {
+		Command cmd = new Command(CommandDef.CMD_TOGGLE_ROTATION.name());
+		return cmd;
+	}
+	
 }

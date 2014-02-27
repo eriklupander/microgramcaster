@@ -30,6 +30,13 @@ public class MediaStoreAdapter {
 	@SuppressLint("SimpleDateFormat")
 	private static final SimpleDateFormat headerDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
 	
+	/**
+	 * Only returns mp4 and ogv files.
+	 * 
+	 * @param context
+	 * @param filePath
+	 * @return
+	 */
 	public List<MediaItem> findFiles(Context context, String filePath) {
 		String[] retCol = { 
 				MediaStore.Video.Media._ID, 
@@ -41,7 +48,8 @@ public class MediaStoreAdapter {
 		Cursor cur = context.getContentResolver().query(
 		    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, 
 		    retCol, 
-		    null, null, null); //MediaStore.MediaColumns.DATA + "='" + filePath + "'" TODO Fix mp4 filtering.
+		    "(" + MediaStore.Video.Media.DISPLAY_NAME + " like '%.mp4' OR " + 
+		    MediaStore.Video.Media.DISPLAY_NAME + " like '%.ogv')", null, null); //MediaStore.MediaColumns.DATA + "='" + filePath + "'" TODO Fix mp4 filtering.
 		if (cur.getCount() == 0) {
 		    return new ArrayList<MediaItem>();
 		}
