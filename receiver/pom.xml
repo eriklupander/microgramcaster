@@ -28,6 +28,8 @@
         </repository>
       
     </repositories>
+	
+	  
 
     <build>
         <!-- Maven will append the version to the finalName (which is the name
@@ -51,7 +53,7 @@
                 <configuration>
                     <!-- Java EE 6 doesn't require web.xml, Maven needs to catch up! -->
                     <failOnMissingWebXml>false</failOnMissingWebXml>
-                    <warName>microgram</warName>
+                    <warName>microgramcaster</warName>
                     <outputDirectory>target</outputDirectory> <!-- C:\\Java\\jboss\\standalone\\deployments -->
                 </configuration>
             </plugin>
@@ -64,7 +66,22 @@
                     <wtpversion>2.0</wtpversion>
                 </configuration>
             </plugin>
-        </plugins>       
+        </plugins> 
+		<pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.tomcat.maven</groupId>
+                    <artifactId>tomcat7-maven-plugin</artifactId>
+                    <version>2.2</version>
+                    <configuration>
+                        <server>calendarserver</server>
+                        <url>http://localhost:7070/manager/text</url>
+                        <username>tomcat</username>
+                        <password>tomcat</password>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>		
     </build>
 
     <profiles>
