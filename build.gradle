@@ -1,0 +1,47 @@
+    buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.8.+'
+		compile group: 'com.google.android', name: 'support-v4', version: 'r7'
+		//compile files('libs/aspectjrt-1.7.3.jar')
+
+		//compile project(':libraries:lib1')
+    }
+	
+	buildTypes {
+        debug {
+            buildConfig "public final static boolean HAS_PROTOTYPE_FEATURE = true;"
+        }
+        release {
+            buildConfig "public final static boolean HAS_PROTOTYPE_FEATURE = false;"
+        }
+    }
+}
+
+apply plugin: 'android'
+	
+	android {
+		compileSdkVersion 19
+		buildToolsVersion "19.0.0"
+        sourceSets {
+            main {
+                manifest.srcFile 'AndroidManifest.xml'
+                java.srcDirs = ['src']
+
+                resources.srcDirs = ['src']
+                aidl.srcDirs = ['src']
+
+                renderscript.srcDirs = ['src']
+
+                res.srcDirs = ['res']
+                assets.srcDirs = ['assets']
+
+            }
+
+
+            instrumentTest.setRoot('tests')
+        }
+    }
