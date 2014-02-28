@@ -26,61 +26,8 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-        <!-- The JBoss Community public repository is a composite repository of
-            several major repositories -->
-        <!-- see http://community.jboss.org/wiki/MavenGettingStarted-Users -->
-        <repository>
-            <id>jboss-public-repository</id>
-            <name>JBoss Repository</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public</url>
-            <!-- These optional flags are designed to speed up your builds by reducing
-                remote server calls -->
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>bintray</id>
-            <name>bintray</name>
-            <url>http://jcenter.bintray.com</url>
-        </repository>
-
+      
     </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>jboss-public-repository</id>
-            <name>JBoss Repository</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-
-        <pluginRepository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>bintray</id>
-            <name>bintray-plugins</name>
-            <url>http://jcenter.bintray.com</url>
-        </pluginRepository>
-    </pluginRepositories>
-
-    <dependencies>
-
-
-    </dependencies>
 
     <build>
         <!-- Maven will append the version to the finalName (which is the name
@@ -105,7 +52,7 @@
                     <!-- Java EE 6 doesn't require web.xml, Maven needs to catch up! -->
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                     <warName>microgram</warName>
-                    <outputDirectory>C:\\Java\\jboss\\standalone\\deployments</outputDirectory>
+                    <outputDirectory>target</outputDirectory> <!-- C:\\Java\\jboss\\standalone\\deployments -->
                 </configuration>
             </plugin>
             <plugin>
@@ -117,22 +64,7 @@
                     <wtpversion>2.0</wtpversion>
                 </configuration>
             </plugin>
-        </plugins>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.tomcat.maven</groupId>
-                    <artifactId>tomcat7-maven-plugin</artifactId>
-                    <version>2.0</version>
-                    <configuration>
-                        <server>microgramcaster</server>
-                        <url>http://localhost:7070/manager/text</url>
-                        <username>tomcat</username>
-                        <password>tomcat</password>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+        </plugins>       
     </build>
 
     <profiles>
@@ -154,18 +86,7 @@
                         <configuration>
                             <skip>true</skip>
                         </configuration>
-                    </plugin>
-                    <!-- The JBoss AS plugin deploys your war to a local JBoss AS container -->
-                    <!-- To use, set the JBOSS_HOME environment variable and run: mvn package
-                        jboss-as:deploy -->
-                    <plugin>
-                        <groupId>org.jboss.as.plugins</groupId>
-                        <artifactId>jboss-as-maven-plugin</artifactId>
-                        <version>7.1.1.Final</version>
-                        <configuration>
-                            <hostname>localhost</hostname>
-                        </configuration>
-                    </plugin>
+                    </plugin>                   
                 </plugins>
             </build>
         </profile>
