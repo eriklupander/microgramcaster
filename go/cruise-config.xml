@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="69">
+  <server artifactsdir="artifacts" commandRepositoryLocation="default" serverId="2d30bec0-8f55-4aa6-bf4b-2ba31bbf9d5f" />
+  <pipelines group="microcaster">
+    <pipeline name="microcaster-receiver">
+      <params>
+        <param name="TEST_SERVER_ADDRESS">http://127.0.0.1:7070</param>
+        <param name="PRODUCTION_SERVER_ADDRESS">http://127.0.0.1:7070</param>
+      </params>
+      <materials>
+        <git url="https://github.com/eriklupander/microgramcaster" />
+      </materials>
+      <stage name="compile-package">
+        <jobs>
+          <job name="compile">
+            <tasks>
+              <exec command="mvn" workingdir="receiver">
+                <arg>clean</arg>
+                <arg>package</arg>
+              </exec>
+            </tasks>
+            <artifacts>
+              <artifact src="receiver/target/microgramcaster.war" />
+            </artifacts>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="deploy-production">
+        <jobs>
+          <job name="deploy">
+            <tasks>
+              <exec command="mvn" workingdir="receiver">
+                <arg>package</arg>
+                <arg>tomcat7:redeploy</arg>
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+  </pipelines>
+  <agents>
+    <agent hostname="Erik-VAIO" ipaddress="192.168.2.36" uuid="e536c0c7-a467-42f0-91de-9d8ac9820250" />
+  </agents>
+</cruise>
+
