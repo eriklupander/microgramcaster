@@ -52,7 +52,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:visibility="invisible" />
+            android:enabled="false"
+            android:visibility="visible" />
 
         <TextView
             android:id="@+id/totalDuration"

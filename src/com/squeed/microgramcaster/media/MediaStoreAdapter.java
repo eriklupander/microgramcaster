@@ -37,7 +37,7 @@ public class MediaStoreAdapter {
 	 * @param filePath
 	 * @return
 	 */
-	public List<MediaItem> findFiles(Context context, String filePath) {
+	public List<MediaItem> findFiles(Context context) {
 		String[] retCol = { 
 				MediaStore.Video.Media._ID, 
 				MediaStore.Video.Media.DISPLAY_NAME, 

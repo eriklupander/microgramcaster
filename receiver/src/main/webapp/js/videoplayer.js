@@ -3,6 +3,12 @@ var videoplayer = new function() {
 	var currentPositionRef = null;
 	var currentPositionCount = 0;
 
+    $("video").bind("playing", function() {
+        var playerObject = document.getElementById('video');
+        var curr = playerObject.currentTime;
+        microgramcaster.sendPlaying(curr);
+    });
+
     $("video").bind("pause", function() {
 		if(currentPositionRef != null) window.clearTimeout(currentPositionRef);
         var playerObject = document.getElementById('video');
@@ -10,7 +16,7 @@ var videoplayer = new function() {
         var dur = playerObject.duration;
         moment().format('HH:mm:ss')
         microgramcaster.displayText(humanizeDuration(curr) + ' of ' + humanizeDuration(dur));
-
+        microgramcaster.sendPaused(curr);
     });
 
     $("video").bind("ended", function() {
@@ -48,6 +54,7 @@ var videoplayer = new function() {
     });
 
     $("video").bind("loadstart", function() {
+        var playerObject = document.getElementById('video');
         microgramcaster.displayText('Starting to load ' + lastSegment(playerObject.currentSrc));
     });
 	
@@ -66,13 +73,14 @@ var videoplayer = new function() {
         playerObject.play();
 
         microgramcaster.displayText(humanizeDuration(curr) + ' of ' + humanizeDuration(dur) + '...');
-        microgramcaster.sendEvent(
-            {
-            "type":"event",
-            "eventId":"EVENT_PLAYING",
-            "currentPosition": curr
-            }
-        );
+        microgramcaster.sendPlaying(curr);
+//        microgramcaster.sendEvent(
+//            {
+//            "type":"event",
+//            "eventId":"EVENT_PLAYING",
+//            "currentPosition": curr
+//            }
+//        );
     });
 
     $("video").bind("progress", function() {

@@ -47,36 +47,15 @@ var microgramcaster = new function() {
         switch(command.id) {
             case "CMD_PLAY_URL":
                 videoplayer.playUrl(command.params.url);
-
-                var rsp = {
-                    "type":"event",
-                    "eventId":"EVENT_PLAYING",
-                    "currentPosition": videoplayer.getCurrentPosition()
-                };
-                window.messageBus.send(event.senderId, JSON.stringify(rsp));
                 break;
             case "CMD_PLAY":
                 videoplayer.play();
-
-                var rsp = {
-                    "type":"event",
-                    "eventId":"EVENT_PLAYING",
-                    "currentPosition": videoplayer.getCurrentPosition()
-                };
-                window.messageBus.send(event.senderId, JSON.stringify(rsp));
                 break;
             case "CMD_PAUSE":
                 videoplayer.pause();
-
-                var rsp = {
-                    "type":"event",
-                    "eventId":"EVENT_PAUSED",
-                    "currentPosition": videoplayer.getCurrentPosition()
-                };
-                window.messageBus.send(event.senderId, JSON.stringify(rsp));
                 break;
             case "CMD_ADD_TO_PLAYLIST":
-                videoplayer.addToPlaylist(command.params.url);
+                videoplayer.addToPlaylist(command.params.url);      // Unused...
                 break;
 			case "CMD_SEEK_POSITION":
 				videoplayer.seek(command.params.currentPosition);
@@ -128,5 +107,26 @@ var microgramcaster = new function() {
     this.sendEvent = function(evt) {
         window.messageBus.send(senderId, evt);
     };
-	
+
+    this.sendPlaying = function(currentPositionSeconds) {
+        var rsp = {
+            "type":"event",
+            "eventId":"EVENT_PLAYING",
+            "currentPosition": videoplayer.getCurrentPosition()
+        };
+        microgramcaster.sendEvent(JSON.stringify(rsp));
+    };
+
+    this.sendPaused = function(currentPositionSeconds) {
+        var rsp = {
+            "type":"event",
+            "eventId":"EVENT_PAUSED",
+            "currentPosition": videoplayer.getCurrentPosition()
+        };
+        microgramcaster.sendEvent(JSON.stringify(rsp));
+    };
+
+    this.sendFinished = function() {
+
+    };
 };

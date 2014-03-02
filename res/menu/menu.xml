@@ -38,7 +38,7 @@ app:showAsAction="always"
     <item
         android:id="@+id/action_rotate"
         android:title="@string/rotate"
-        android:icon="@drawable/ic_menu_rotate"
+        android:icon="@drawable/ic_menu_always_landscape_portrait"
         app:showAsAction="always" />
        
      <item
