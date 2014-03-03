@@ -74,10 +74,10 @@
                     <artifactId>tomcat7-maven-plugin</artifactId>
                     <version>2.2</version>
                     <configuration>
-                        <server>calendarserver</server>
-                        <url>http://localhost:7070/manager/text</url>
-                        <username>tomcat</username>
-                        <password>tomcat</password>
+                        <server>${env.receiverTomcatServer}</server>
+                        <url>${env.receiverBaseUrl}/manager/text</url>
+                        <username>${env.tomcatAdminUser}</username>
+                        <password>${env.tomcatAdminPwd}</password>
                     </configuration>
                 </plugin>
             </plugins>
