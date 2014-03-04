@@ -85,6 +85,7 @@ public class MainActivity extends ActionBarActivity {
 	private MenuItem pauseIcon;
 
 	private SeekBar seekBar;
+	private ArrayAdapterItem adapter;
 
 	private TextView currentPosition;
 	private TextView totalDuration;
@@ -94,7 +95,7 @@ public class MainActivity extends ActionBarActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(com.squeed.microgramcaster.R.layout.activity_main);
 
-		ActionBar actionBar = getSupportActionBar();
+		//ActionBar actionBar = getSupportActionBar();
 		// actionBar.setBackgroundDrawable(new ColorDrawable(
 		// android.R.color.transparent));
 
@@ -141,6 +142,8 @@ public class MainActivity extends ActionBarActivity {
 	}
 
 	private void hideSeekbar() {
+		adapter.setSelectedPosition(-1);
+		adapter.notifyDataSetChanged();
 		seekBar.setProgress(0);
 		seekBar.setEnabled(false);
 		seekBarHandler.removeCallbacksAndMessages(null);
@@ -221,7 +224,10 @@ public class MainActivity extends ActionBarActivity {
 	}
 
 	public void onEventFinished() {
+		adapter.setSelectedPosition(-1);
+		adapter.notifyDataSetChanged();
 		currentSeekbarPosition = 0;
+		seekBar.setProgress(0);
 		seekBarHandler.removeCallbacksAndMessages(null);
 		hideMediaControlIcons();
 	}
@@ -237,7 +243,7 @@ public class MainActivity extends ActionBarActivity {
 		ArrayList<MediaItem> mediaFiles = (ArrayList<MediaItem>) mediaStoreAdapter.findFiles(this);
 		listView = (ListView) findViewById(com.squeed.microgramcaster.R.id.videoFiles);
 
-		final ArrayAdapterItem adapter = new ArrayAdapterItem(this, R.layout.listview_item, mediaFiles);
+		adapter = new ArrayAdapterItem(this, R.layout.listview_item, mediaFiles);
 		listView.setAdapter(adapter);
 		OnItemClickListener listener = new OnItemClickListener() {
 
@@ -290,9 +296,7 @@ public class MainActivity extends ActionBarActivity {
 
 		showSeekbar();
 		if (mApiClient.isConnected()) {
-			sendMessage(CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));
-			pauseIcon.setVisible(true); // TODO move this to the 'playing'
-										// callback.
+			sendMessage(CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));			
 		}
 	}
 

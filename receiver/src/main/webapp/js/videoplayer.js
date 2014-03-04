@@ -1,12 +1,32 @@
 var videoplayer = new function() {
 
+    var showSplashHandler = null;
 	var currentPositionRef = null;
 	var currentPositionCount = 0;
 
+    var cancelSplash = function() {
+        if(typeof showSplashHandler != 'undefined' && showSplashHandler != null) {
+            window.clearInterval(showSplashHandler);
+        }
+    }
+
+    var timeUpdateAfterStartCallback = function() {
+        var playerObject = document.getElementById('video');
+        var newcurr = Math.floor(playerObject.currentTime);
+        if(newcurr != lastCurrentPosition) {
+            microgramcaster.sendPlaying(newcurr);
+            $("video").unbind("timeupdate");
+        }
+    };
+
     $("video").bind("playing", function() {
+        cancelSplash();
         var playerObject = document.getElementById('video');
         var curr = playerObject.currentTime;
-        microgramcaster.sendPlaying(curr);
+        //microgramcaster.sendPlaying(curr);
+        lastCurrentPosition = Math.floor(curr);
+
+        $("video").bind("timeupdate", timeUpdateAfterStartCallback);
     });
 
     $("video").bind("pause", function() {
@@ -22,14 +42,51 @@ var videoplayer = new function() {
     $("video").bind("ended", function() {
 		if(currentPositionRef != null) window.clearTimeout(currentPositionRef);
 		microgramcaster.displayText('Playback finished');
-        setTimeout(function() {$('#splash').css('display','block')}, 15000);
+        microgramcaster.sendFinished();
+
+        showSplashHandler = setTimeout(function() {$('#splash').css('display','block')}, 15000);
     });
+
+    $("video").bind("play", function() {
+        renderPlayCallback();
+    });
+
+    $("video").bind("loadstart", function() {
+        cancelSplash();
+        var playerObject = document.getElementById('video');
+        microgramcaster.displayText('Starting to load ' + lastSegment(playerObject.currentSrc));
+    });
+
+    $("video").bind("seeking", function() {
+        var playerObject = document.getElementById('video');
+        var curr = playerObject.currentTime;
+        var dur = playerObject.duration;
+
+        microgramcaster.displayText('Seeking ' + humanizeDuration(curr) + ' of ' + humanizeDuration(dur) + '...');
+    });
+
+    $("video").bind("waiting", function() {
+        microgramcaster.displayLoadingSpinner();
+    });
+
+    var lastCurrentPosition = -1;
+
+    $("video").bind("seeked", function() {
+        var playerObject = document.getElementById('video');
+        var curr = playerObject.currentTime;
+        lastCurrentPosition = Math.floor(curr);
+        var dur = playerObject.duration;
+        playerObject.play();
+        $("video").bind("timeupdate", timeUpdateAfterStartCallback);
+    });
+
 
     var lastSegment = function(url) {
         return url.substring(url.lastIndexOf("/")+1);
     };
 
     var renderPlayCallback = function() {
+        cancelSplash();
         $('#splash').css('display', 'none');
         var playerObject = document.getElementById('video');
         var curr = playerObject.currentTime;
@@ -49,44 +106,6 @@ var videoplayer = new function() {
         }, 1000);
     };
 
-    $("video").bind("play", function() {
-        renderPlayCallback();
-    });
-
-    $("video").bind("loadstart", function() {
-        var playerObject = document.getElementById('video');
-        microgramcaster.displayText('Starting to load ' + lastSegment(playerObject.currentSrc));
-    });
-	
-	$("video").bind("seeking", function() {
-        var playerObject = document.getElementById('video');
-        var curr = playerObject.currentTime;
-        var dur = playerObject.duration;
-
-        microgramcaster.displayText('Seeking ' + humanizeDuration(curr) + ' of ' + humanizeDuration(dur) + '...');
-    });
-
-    $("video").bind("seeked", function() {
-        var playerObject = document.getElementById('video');
-        var curr = playerObject.currentTime;
-        var dur = playerObject.duration;
-        playerObject.play();
-
-        microgramcaster.displayText(humanizeDuration(curr) + ' of ' + humanizeDuration(dur) + '...');
-        microgramcaster.sendPlaying(curr);
-//        microgramcaster.sendEvent(
-//            {
-//            "type":"event",
-//            "eventId":"EVENT_PLAYING",
-//            "currentPosition": curr
-//            }
-//        );
-    });
-
-    $("video").bind("progress", function() {
-        // TODO perhaps add a tiny little loading spinner somewhere...
-        //microgramcaster.displayText('Buffering ' + $('video').attr('src') + "...");
-    });
 
     var humanizeDuration = function(input, units ) {
       // units is a string with possible values of y, M, w, d, h, m, s, ms
@@ -119,17 +138,8 @@ var videoplayer = new function() {
          }
     }
 
-    var playVideo = function(url) {
-        $('#splash').css('display', 'none');
-        $('#video').empty();
-        var srcElem = document.createElement("source");
-        $(srcElem).attr('src',url);
-        $(srcElem).attr('type',getTypeFromUrl(url));
-        $('#video').append(srcElem);
-    }
-
-
     this.play = function() {
+        cancelSplash();
         $('#splash').css('display', 'none');
         var player = document.getElementById('video');
         player.play();
@@ -154,8 +164,12 @@ var videoplayer = new function() {
     };
 	
 	this.seek = function(positionSeconds) {
-		var player = document.getElementById('video');
-		player.currentTime = positionSeconds;
+        try {
+            var player = document.getElementById('video');
+            player.currentTime = positionSeconds;
+        } catch(e) {
+            microgramcaster.displayText('No clip seekable at this moment, please try again...');
+        }
 	};
 	
 	this.getCurrentPosition = function() {

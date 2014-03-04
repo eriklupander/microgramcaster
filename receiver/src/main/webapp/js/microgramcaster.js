@@ -39,10 +39,10 @@ var microgramcaster = new function() {
 
 	// handler for the CastMessageBus message event
 	window.messageBus.onMessage = function (event) {
+
         senderId = event.senderId;
 		console.log('Message [' + event.senderId + ']: ' + event.data);
-		// display the message from the sender
-        //microgramcaster.displayText(event.data);
+
         var command = cmd.parse(event.data);
         switch(command.id) {
             case "CMD_PLAY_URL":
@@ -59,12 +59,12 @@ var microgramcaster = new function() {
                 break;
 			case "CMD_SEEK_POSITION":
 				videoplayer.seek(command.params.currentPosition);
-                var rsp = {
-                    "type":"response",
-                    "responseId":"REQUESTED_POSITION",
-                    "currentPosition": videoplayer.getCurrentPosition()
-                };
-                window.messageBus.send(event.senderId, JSON.stringify(rsp));
+//                var rsp = {
+//                    "type":"response",
+//                    "responseId":"REQUESTED_POSITION",
+//                    "currentPosition": videoplayer.getCurrentPosition()
+//                };
+//                window.messageBus.send(event.senderId, JSON.stringify(rsp));
 				break;
 			case "CMD_REQUEST_POSITION":
 
@@ -82,7 +82,6 @@ var microgramcaster = new function() {
                 microgramcaster.displayText("Unknown or unparsable command: " + event.data);
                 break;
         }
-        //playVideo(event.data);
 
         // Echo everything back to all attached senders
 		//window.messageBus.send(event.senderId, event.data);
@@ -127,6 +126,17 @@ var microgramcaster = new function() {
     };
 
     this.sendFinished = function() {
+        var rsp = {
+            "type":"event",
+            "eventId":"EVENT_FINISHED"
+        };
+        microgramcaster.sendEvent(JSON.stringify(rsp));
+    };
+
+    this.displayLoadingSpinner = function() {
+
+    };
+    this.hideLoadingSpinner = function() {
 
     };
 };
