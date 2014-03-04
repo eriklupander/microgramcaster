@@ -81,6 +81,7 @@ public class MainActivity extends ActionBarActivity {
 	private boolean mApplicationStarted;
 	private boolean mWaitingForReconnect;
 
+	private MenuItem rotateIcon;
 	private MenuItem playIcon;
 	private MenuItem pauseIcon;
 
@@ -224,12 +225,18 @@ public class MainActivity extends ActionBarActivity {
 	}
 
 	public void onEventFinished() {
+		resetToLandscape();
 		adapter.setSelectedPosition(-1);
 		adapter.notifyDataSetChanged();
 		currentSeekbarPosition = 0;
 		seekBar.setProgress(0);
 		seekBarHandler.removeCallbacksAndMessages(null);
 		hideMediaControlIcons();
+	}
+
+	private void resetToLandscape() {
+		landscape = true;
+		rotateIcon.setIcon(R.drawable.ic_menu_always_landscape_portrait);
 	}
 
 	public void onRequestedPosition(int positionSeconds) {
@@ -296,6 +303,7 @@ public class MainActivity extends ActionBarActivity {
 
 		showSeekbar();
 		if (mApiClient.isConnected()) {
+			resetToLandscape();
 			sendMessage(CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));			
 		}
 	}
@@ -322,7 +330,7 @@ public class MainActivity extends ActionBarActivity {
 			}
 		});
 
-		final MenuItem rotateIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_rotate);
+		rotateIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_rotate);
 		rotateIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
 
 			@Override

@@ -40,6 +40,9 @@ var videoplayer = new function() {
     });
 
     $("video").bind("ended", function() {
+        if($('#video').hasClass('rotate90')) {
+            $('#video').removeClass('rotate90');
+        }
 		if(currentPositionRef != null) window.clearTimeout(currentPositionRef);
 		microgramcaster.displayText('Playback finished');
         microgramcaster.sendFinished();
@@ -151,12 +154,16 @@ var videoplayer = new function() {
     };
 
     this.playUrl = function(url) {
+        if($('#video').hasClass('rotate90')) {
+            $('#video').removeClass('rotate90');
+        }
         $('#splash').css('display', 'none');
         $('#video').empty();
         var srcElem = document.createElement("source");
         $(srcElem).attr('src',url);
         $(srcElem).attr('type',getTypeFromUrl(url));
         $('#video').append(srcElem);
+        this.play();
     };
 
     this.addToPlaylist = function(url) {

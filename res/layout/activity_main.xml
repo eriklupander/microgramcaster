@@ -2,13 +2,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity" >
-
-   
 
     <TextView
         android:id="@+id/textView1"
@@ -36,7 +32,10 @@
         android:layout_alignLeft="@+id/videoFiles"
         android:layout_alignParentBottom="true"
         android:layout_alignRight="@+id/videoFiles"
-        android:gravity="center" >
+        android:focusable="true"
+        android:gravity="center"
+        android:paddingBottom="6dp"
+        android:paddingTop="6dp" >
 
         <TextView
             android:id="@+id/currentPosition"

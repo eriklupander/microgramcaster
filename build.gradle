@@ -11,21 +11,14 @@ buildscript {
 apply plugin: 'android'
 
 dependencies {
-	//compile project(':libraries:android-support-v7-appcompat')
-	//compile project(':libraries:android-support-v7-mediarouter')
-	//compile project(':libraries:google-play-services_lib')
 	compile 'com.android.support:support-v4:18.0.0'
 	compile 'com.android.support:mediarouter-v7:18.0.+'
 	compile 'com.android.support:appcompat-v7:18.0.+'
 	compile 'com.google.android.gms:play-services:4.+'
-	//compile 'com.google.android.gms:play-services:3.1.36'
-   // compile group: 'com.google.android', name: 'support-v4', version: 'r7'
     compile files('libs/aspectjrt-1.7.3.jar')
     compile files('libs/commons-io-2.4.jar')
     compile files('libs/isoparser-1.0-RC-27.jar')
 }
-
-//compile project(':libraries:lib1')
 
 android {
     compileSdkVersion 19
