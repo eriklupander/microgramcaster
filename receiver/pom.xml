@@ -53,7 +53,7 @@
                 <configuration>
                     <!-- Java EE 6 doesn't require web.xml, Maven needs to catch up! -->
                     <failOnMissingWebXml>false</failOnMissingWebXml>
-                    <warName>microgramcaster</warName>
+                    <warName>microgramcaster</warName>  <!-- microgramcaster -->
                     <outputDirectory>target</outputDirectory> <!-- C:\\Java\\jboss\\standalone\\deployments -->
                 </configuration>
             </plugin>
