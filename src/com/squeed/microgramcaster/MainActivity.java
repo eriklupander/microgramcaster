@@ -7,6 +7,10 @@ import java.util.ArrayList;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,6 +21,7 @@ import android.support.v7.app.MediaRouteActionProvider;
 import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -90,6 +95,10 @@ public class MainActivity extends ActionBarActivity {
 
 	private TextView currentPosition;
 	private TextView totalDuration;
+	
+	private ProgressDialog loadingDialog;
+	private AlertDialog dialog;
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +113,23 @@ public class MainActivity extends ActionBarActivity {
 		initMediaRouter();
 		listVideoFiles();
 		initSeekBar();
+		initDialogs();
+	}
+
+	private void initDialogs() {
+		this.loadingDialog = new ProgressDialog(this);
+		this.loadingDialog.setTitle("Loading");
+
+		this.dialog = new AlertDialog.Builder(this).create();
+		this.dialog.setTitle("Information");
+
+		this.dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Ok", new DialogInterface.OnClickListener() {
+
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+
+			}
+		});
 	}
 
 	private void startWebServer() {
@@ -210,6 +236,7 @@ public class MainActivity extends ActionBarActivity {
 		seekBarHandler.removeCallbacksAndMessages(null);
 		playIcon.setVisible(false);
 		pauseIcon.setVisible(true);
+		loadingDialog.hide();
 		
 		// Send a position request directly as the sync between what the html5 player callbacks says and the actual
 		// time when this callback is invoked differ by a few seconds for some reason. It's a bit like 'playing'
@@ -230,6 +257,7 @@ public class MainActivity extends ActionBarActivity {
 		adapter.notifyDataSetChanged();
 		currentSeekbarPosition = 0;
 		seekBar.setProgress(0);
+		loadingDialog.hide();
 		seekBarHandler.removeCallbacksAndMessages(null);
 		hideMediaControlIcons();
 	}
@@ -259,20 +287,14 @@ public class MainActivity extends ActionBarActivity {
 				playSelectedMedia(mediaStoreAdapter, adapter, listItemView, position);
 			}
 		};
-
 		listView.setOnItemClickListener(listener);
+		
+		
 		OnItemLongClickListener lcListener = new OnItemLongClickListener() {
 
 			@Override
 			public boolean onItemLongClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-				String fileName = (String) arg1.getTag();
-				adapter.setSelectedPosition(arg2);
-				adapter.notifyDataSetChanged();
-				FileChannel fileChannel = mediaStoreAdapter.getFileChannel(MainActivity.this, fileName);
-				String txt = IsoFileUtil.getInfo(fileChannel);
-				Log.i(TAG, txt);
-				Toast.makeText(MainActivity.this, txt, Toast.LENGTH_LONG).show();
-				return true;
+				return itemLongClicked(mediaStoreAdapter, arg1, arg2);
 			}
 		};
 		listView.setOnItemLongClickListener(lcListener);
@@ -304,8 +326,22 @@ public class MainActivity extends ActionBarActivity {
 		showSeekbar();
 		if (mApiClient.isConnected()) {
 			resetToLandscape();
+			loadingDialog.setMessage("Loading '"+fileName+"'");
+			loadingDialog.show();
 			sendMessage(CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));			
 		}
+	}
+	
+	private boolean itemLongClicked(final MediaStoreAdapter mediaStoreAdapter, View arg1, int arg2) {
+		String fileName = (String) arg1.getTag();
+		adapter.setSelectedPosition(arg2);
+		adapter.notifyDataSetChanged();
+		FileChannel fileChannel = mediaStoreAdapter.getFileChannel(MainActivity.this, fileName);
+		String txt = IsoFileUtil.getInfo(fileChannel);
+		Log.i(TAG, txt);
+		dialog.setMessage(txt);
+		dialog.show();
+		return true;
 	}
 
 	@Override
@@ -392,7 +428,6 @@ public class MainActivity extends ActionBarActivity {
 			hideSeekbar();
 
 		}
-
 	}
 
 	private void hideMediaControlIcons() {
@@ -582,6 +617,8 @@ public class MainActivity extends ActionBarActivity {
 				+ MyHTTPD.WEB_SERVER_PORT + "/" + fileName;
 	}
 
+	
+
 	/**
 	 * Google Play services callbacks
 	 */
@@ -592,5 +629,33 @@ public class MainActivity extends ActionBarActivity {
 
 			teardown();
 		}
+	}
+	
+	/**
+	 * Listen for volume upp/down presses and propagate them to the receiver.
+	 */
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		if (event.getAction() == KeyEvent.ACTION_DOWN) {
+			double volume = Cast.CastApi.getVolume(mApiClient);
+			switch (event.getKeyCode()) {
+			case KeyEvent.KEYCODE_VOLUME_UP:
+				try {
+					if (volume < 1.0) 
+						Cast.CastApi.setVolume(mApiClient, volume + 0.05d);
+				} catch (IOException e) {
+				}
+				return true;
+			case KeyEvent.KEYCODE_VOLUME_DOWN:
+				try {
+					if (volume > 0.0) 
+						Cast.CastApi.setVolume(mApiClient, volume - 0.05d);
+				} catch (IOException e) {
+				}
+				return true;
+			}
+		}
+
+		return super.dispatchKeyEvent(event);
 	}
 }
