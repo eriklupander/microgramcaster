@@ -39,3 +39,19 @@ body {
     left:280px; /* (1280-720) / 2   */
 
 }
+
+#progressbar {
+    background-color: #111111;
+    border-radius: 5px;
+    padding: 2px;
+    position: absolute;
+    top:660px;
+    left:40px;
+    width:1200px;
+}
+
+#progressbar > div {
+    background-color: orange;
+    width: 0%;
+    height: 14px;
+}
