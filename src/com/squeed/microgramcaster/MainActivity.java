@@ -636,24 +636,27 @@ public class MainActivity extends ActionBarActivity {
 	 */
 	@Override
 	public boolean dispatchKeyEvent(KeyEvent event) {
-		if (event.getAction() == KeyEvent.ACTION_DOWN) {
-			double volume = Cast.CastApi.getVolume(mApiClient);
-			switch (event.getKeyCode()) {
-			case KeyEvent.KEYCODE_VOLUME_UP:
-				try {
-					if (volume < 1.0) 
-						Cast.CastApi.setVolume(mApiClient, volume + 0.05d);
-				} catch (IOException e) {
+		try {
+			if (event.getAction() == KeyEvent.ACTION_DOWN) {
+				double volume = Cast.CastApi.getVolume(mApiClient);
+				switch (event.getKeyCode()) {
+				case KeyEvent.KEYCODE_VOLUME_UP:
+					try {
+						if (volume < 1.0)
+							Cast.CastApi.setVolume(mApiClient, volume + 0.05d);
+					} catch (IOException e) {
+					}
+					return true;
+				case KeyEvent.KEYCODE_VOLUME_DOWN:
+					try {
+						if (volume > 0.0)
+							Cast.CastApi.setVolume(mApiClient, volume - 0.05d);
+					} catch (IOException e) {
+					}
+					return true;
 				}
-				return true;
-			case KeyEvent.KEYCODE_VOLUME_DOWN:
-				try {
-					if (volume > 0.0) 
-						Cast.CastApi.setVolume(mApiClient, volume - 0.05d);
-				} catch (IOException e) {
-				}
-				return true;
 			}
+		} catch (Throwable t) {
 		}
 
 		return super.dispatchKeyEvent(event);
