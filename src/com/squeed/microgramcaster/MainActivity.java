@@ -12,6 +12,7 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.view.MenuItemCompat;
@@ -660,5 +661,35 @@ public class MainActivity extends ActionBarActivity {
 		}
 
 		return super.dispatchKeyEvent(event);
+	}
+	
+	private Object mutex = new Object();
+	private boolean backPressed = false;
+	private Handler handler = new Handler();
+	
+	Runnable resetBackButtonState = new Runnable() {
+		
+		@Override
+		public void run() {
+			synchronized (mutex) {
+				backPressed = false;	
+			}			
+		}
+	};
+	
+	@Override
+	public void onBackPressed() {
+		if(backPressed) {
+			handler.removeCallbacks(resetBackButtonState);
+			super.onBackPressed();
+		} else {
+			Toast.makeText(this, "Are you sure you want to leave the application? Press back again to confirm. " +
+								 "If you want to keep casting in the background, use the Home button instead.", Toast.LENGTH_LONG).show();
+			synchronized (mutex) {
+				backPressed = true;
+			}
+			handler.postDelayed(resetBackButtonState, 5000);
+			
+		}
 	}
 }
