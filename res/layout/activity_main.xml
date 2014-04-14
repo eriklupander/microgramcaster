@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:text="Select file to cast"
+        android:text="@string/selectCastFile"
         android:textAppearance="?android:attr/textAppearanceLarge" />
     
      <ListView
@@ -41,13 +41,13 @@
             android:id="@+id/currentPosition"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="--:--:--"
+            android:text="@string/timeDigits"
             android:textSize="12sp"
             android:visibility="invisible" />
 
         <SeekBar
             android:id="@+id/seekBar1"
-            android:layout_width="match_parent"
+            android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
@@ -58,7 +58,7 @@
             android:id="@+id/totalDuration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="--:--:--"
+            android:text="@string/timeDigits"
             android:textSize="12sp"
             android:visibility="invisible" />
     </LinearLayout>

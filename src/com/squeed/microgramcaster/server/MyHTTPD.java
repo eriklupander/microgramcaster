@@ -47,14 +47,6 @@ public class MyHTTPD extends NanoHTTPD {
      * Hashtable mapping (String)FILENAME_EXTENSION -> (String)MIME_TYPE
      */
     private static final Map<String, String> MIME_TYPES = new HashMap<String, String>() {{
-//        put("css", "text/css");
-//        put("htm", "text/html");
-//        put("html", "text/html");
-//        put("xml", "text/xml");
-//        put("java", "text/x-java-source, text/java");
-//        put("md", "text/plain");
-//        put("txt", "text/plain");
-//        put("asc", "text/plain");
         put("gif", "image/gif");
         put("jpg", "image/jpeg");
         put("jpeg", "image/jpeg");
@@ -63,16 +55,6 @@ public class MyHTTPD extends NanoHTTPD {
         put("m3u", "audio/mpeg-url");
         put("mp4", "video/mp4");
         put("ogv", "video/ogg");
-//        put("flv", "video/x-flv");
-//        put("mov", "video/quicktime");
-//        put("swf", "application/x-shockwave-flash");
-//        put("js", "application/javascript");
-//        put("pdf", "application/pdf");
-//        put("doc", "application/msword");
-//        put("ogg", "application/x-ogg");
-//        put("zip", "application/octet-stream");
-//        put("exe", "application/octet-stream");
-//        put("class", "application/octet-stream");
     }};
 	
     
@@ -185,7 +167,6 @@ public class MyHTTPD extends NanoHTTPD {
                     is.skip(startFrom);
 
                     res = createResponse(Response.Status.PARTIAL_CONTENT, mime, is);
-                    //res.addHeader("Content-Length", "" + dataLen); // Note: The Content-Length is also set inside NanoHTTPD code which results in duplicate headers, which breaks Chrome playback.
                     res.addHeader("Content-Range", "bytes " + startFrom + "-" + endAt + "/" + fileLen);
                     res.addHeader("ETag", etag);
                 }
@@ -194,7 +175,6 @@ public class MyHTTPD extends NanoHTTPD {
                     res = createResponse(Response.Status.NOT_MODIFIED, mime, "");
                 else {
                     res = createResponse(Response.Status.OK, mime, is);
-                   // res.addHeader("Content-Length", "" + fileLen);
                     res.addHeader("ETag", etag);
                 }
             }

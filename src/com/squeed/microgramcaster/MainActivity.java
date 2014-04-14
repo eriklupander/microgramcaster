@@ -8,15 +8,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.view.MenuItemCompat;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.MediaRouteActionProvider;
 import android.support.v7.media.MediaRouteSelector;
@@ -339,7 +336,7 @@ public class MainActivity extends ActionBarActivity {
 		adapter.notifyDataSetChanged();
 		FileChannel fileChannel = mediaStoreAdapter.getFileChannel(MainActivity.this, fileName);
 		String txt = IsoFileUtil.getInfo(fileChannel);
-		Log.i(TAG, txt);
+	
 		dialog.setMessage(txt);
 		dialog.show();
 		return true;
@@ -415,19 +412,16 @@ public class MainActivity extends ActionBarActivity {
 
 		@Override
 		public void onRouteSelected(MediaRouter router, android.support.v7.media.MediaRouter.RouteInfo route) {
-			Log.i(TAG, "onRouteSelected: " + route);
 			mSelectedDevice = CastDevice.getFromBundle(route.getExtras());
 			launchReceiver();
 		}
 
 		@Override
 		public void onRouteUnselected(MediaRouter router, android.support.v7.media.MediaRouter.RouteInfo route) {
-			Log.i(TAG, "onRouteUnselected: " + route);
 			teardown();
 			mSelectedDevice = null;
 			hideMediaControlIcons();
 			hideSeekbar();
-
 		}
 	}
 
@@ -445,7 +439,6 @@ public class MainActivity extends ActionBarActivity {
 
 				@Override
 				public void onApplicationDisconnected(int errorCode) {
-					Log.d(TAG, "application has stopped");
 					teardown();
 				}
 
@@ -497,8 +490,7 @@ public class MainActivity extends ActionBarActivity {
 	 */
 	private class ConnectionCallbacks implements GoogleApiClient.ConnectionCallbacks {
 		@Override
-		public void onConnected(Bundle connectionHint) {
-			Log.d(TAG, "onConnected");
+		public void onConnected(Bundle connectionHint) {		
 
 			if (mApiClient == null) {
 				// We got disconnected while this runnable was pending
@@ -512,7 +504,6 @@ public class MainActivity extends ActionBarActivity {
 
 					// Check if the receiver app is still running
 					if ((connectionHint != null) && connectionHint.getBoolean(Cast.EXTRA_APP_NO_LONGER_RUNNING)) {
-						Log.d(TAG, "App is no longer running");
 						teardown();
 					} else {
 						// Re-create the custom message channel
@@ -530,17 +521,13 @@ public class MainActivity extends ActionBarActivity {
 								@Override
 								public void onResult(ApplicationConnectionResult result) {
 									Status status = result.getStatus();
-									Log.d(TAG,
-											"ApplicationConnectionResultCallback.onResult: statusCode"
-													+ status.getStatusCode());
+									
 									if (status.isSuccess()) {
 										ApplicationMetadata applicationMetadata = result.getApplicationMetadata();
 										String sessionId = result.getSessionId();
 										String applicationStatus = result.getApplicationStatus();
 										boolean wasLaunched = result.getWasLaunched();
-										Log.d(TAG, "application name: " + applicationMetadata.getName() + ", status: "
-												+ applicationStatus + ", sessionId: " + sessionId + ", wasLaunched: "
-												+ wasLaunched);
+										
 										mApplicationStarted = true;
 
 										// Create the custom message
@@ -570,7 +557,6 @@ public class MainActivity extends ActionBarActivity {
 
 		@Override
 		public void onConnectionSuspended(int cause) {
-			Log.d(TAG, "onConnectionSuspended");
 			mWaitingForReconnect = true;
 			hideMediaControlIcons();
 			hideSeekbar();

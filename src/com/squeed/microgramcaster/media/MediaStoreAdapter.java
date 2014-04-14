@@ -49,7 +49,7 @@ public class MediaStoreAdapter {
 		    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, 
 		    retCol, 
 		    "(" + MediaStore.Video.Media.DISPLAY_NAME + " like '%.mp4' OR " + 
-		    MediaStore.Video.Media.DISPLAY_NAME + " like '%.ogv')", null, null); //MediaStore.MediaColumns.DATA + "='" + filePath + "'" TODO Fix mp4 filtering.
+		    MediaStore.Video.Media.DISPLAY_NAME + " like '%.ogv')", null, null);
 		if (cur.getCount() == 0) {
 		    return new ArrayList<MediaItem>();
 		}

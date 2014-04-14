@@ -27,25 +27,25 @@ app:showAsAction="always"
         android:id="@+id/action_play"
         android:title="@string/play"
         android:icon="@drawable/ic_media_play"
-        app:showAsAction="always" /> 
+        app:showAsAction="ifRoom" /> 
     
     <item
         android:id="@+id/action_pause"
         android:title="@string/pause"
         android:icon="@drawable/ic_media_pause"
-        app:showAsAction="always" />  
+        app:showAsAction="ifRoom" />  
         
     <item
         android:id="@+id/action_rotate"
         android:title="@string/rotate"
         android:icon="@drawable/ic_menu_always_landscape_portrait"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
        
      <item
         android:id="@+id/action_refresh"
         android:title="@string/refresh"
         android:icon="@drawable/ic_menu_refresh"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
         
      <item
         android:id="@+id/media_route_menu_item"

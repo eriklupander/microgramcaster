@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.List;
 
-import android.util.Log;
-
 import com.coremedia.iso.IsoFile;
 import com.coremedia.iso.boxes.Box;
 import com.coremedia.iso.boxes.FileTypeBox;
@@ -19,12 +17,10 @@ public class IsoFileUtil {
 			isoFile = new IsoFile(new FileDataSourceImpl(fc));
 			List<Box> boxes = isoFile.getBoxes();
 			StringBuilder buf = new StringBuilder();
-			Log.i("IsoFileUtil", "Track count: " + isoFile.getMovieBox().getTrackCount() + "\n");
+
 			buf.append(isoFile.toString());
 			for(Box box : boxes) {
-				Log.i("IsoFileUtil", "Class: " + box.getClass().getSimpleName());
-				Log.i("IsoFileUtil", "Type: " + box.getType());
-				Log.i("IsoFileUtil", "Size: " + box.getSize());
+				
 				buf.append("Class: " + box.getClass().getSimpleName() + "\n");
 				buf.append("Type: " + box.getType() + "\n");
 				buf.append("Size: " + box.getSize() + "\n");

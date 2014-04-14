@@ -9,7 +9,7 @@
         android:layout_height="wrap_content"
         android:layout_alignBottom="@+id/thumb"
         android:layout_alignLeft="@+id/title"
-        android:text="duration"
+        android:text="@string/duration"
         android:textAppearance="?android:attr/textAppearanceSmall" />
 
     <ImageView
@@ -18,6 +18,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
+        android:contentDescription="@string/thumbnail"
         android:src="@drawable/ic_launcher" />
 
     <TextView
@@ -27,7 +28,7 @@
         android:layout_above="@+id/duration"
         android:layout_marginLeft="14dp"
         android:layout_toRightOf="@+id/thumb"
-        android:text="title"
+        android:text="@string/title"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
 </RelativeLayout>

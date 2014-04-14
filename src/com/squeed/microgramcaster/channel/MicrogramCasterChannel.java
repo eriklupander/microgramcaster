@@ -36,7 +36,6 @@ public class MicrogramCasterChannel implements MessageReceivedCallback {
 	@Override
 	public void onMessageReceived(CastDevice castDevice, String namespace,
 			String message) {
-		Log.d(TAG, "onMessageReceived: " + message);
 		
 		if(!namespace.equalsIgnoreCase(PROTOCOL)) {
 			Log.i(TAG, "Discarded message from unknown namespace: " + namespace);
@@ -72,7 +71,6 @@ public class MicrogramCasterChannel implements MessageReceivedCallback {
 			
 		} catch (JSONException e) {
 			Log.e(TAG, e.getMessage());
-			e.printStackTrace();
 		}
 	}
 }
