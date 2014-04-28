@@ -1,16 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent" >
-
-    <TextView
-        android:id="@+id/duration"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/thumb"
-        android:layout_alignLeft="@+id/title"
-        android:text="@string/duration"
-        android:textAppearance="?android:attr/textAppearanceSmall" />
+    android:layout_height="wrap_content" >
 
     <ImageView
         android:id="@+id/thumb"
@@ -25,10 +16,19 @@
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/duration"
-        android:layout_marginLeft="14dp"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="15dp"
         android:layout_toRightOf="@+id/thumb"
         android:text="@string/title"
         android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/duration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/title"
+        android:layout_below="@+id/title"
+        android:text="@string/duration"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
 
 </RelativeLayout>

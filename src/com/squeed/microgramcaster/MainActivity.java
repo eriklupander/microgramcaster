@@ -31,7 +31,6 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.gms.cast.Cast;
 import com.google.android.gms.cast.Cast.ApplicationConnectionResult;
 import com.google.android.gms.cast.CastDevice;
@@ -102,16 +101,11 @@ public class MainActivity extends ActionBarActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(com.squeed.microgramcaster.R.layout.activity_main);
-
-		//ActionBar actionBar = getSupportActionBar();
-		// actionBar.setBackgroundDrawable(new ColorDrawable(
-		// android.R.color.transparent));
-
+		initDialogs();
 		startWebServer();
 		initMediaRouter();
 		listVideoFiles();
-		initSeekBar();
-		initDialogs();
+		initSeekBar();		
 	}
 
 	private void initDialogs() {
@@ -161,7 +155,6 @@ public class MainActivity extends ActionBarActivity {
 	private void showSeekbar() {
 		seekBar.setEnabled(true);
 		seekBar.setProgress(currentSeekbarPosition);
-		// seekBar.setVisibility(SeekBar.VISIBLE);
 		totalDuration.setVisibility(TextView.VISIBLE);
 		currentPosition.setVisibility(TextView.VISIBLE);
 	}
@@ -172,7 +165,6 @@ public class MainActivity extends ActionBarActivity {
 		seekBar.setProgress(0);
 		seekBar.setEnabled(false);
 		seekBarHandler.removeCallbacksAndMessages(null);
-		// seekBar.setVisibility(SeekBar.INVISIBLE);
 		totalDuration.setVisibility(TextView.INVISIBLE);
 		currentPosition.setVisibility(TextView.INVISIBLE);
 	}
@@ -192,6 +184,7 @@ public class MainActivity extends ActionBarActivity {
 			// End media router discovery
 			mMediaRouter.removeCallback(mMediaRouterCallback);
 		}
+		teardown();
 		super.onPause();
 	}
 
@@ -273,11 +266,8 @@ public class MainActivity extends ActionBarActivity {
 
 	private void listVideoFiles() {
 		final MediaStoreAdapter mediaStoreAdapter = new MediaStoreAdapter();
-		ArrayList<MediaItem> mediaFiles = (ArrayList<MediaItem>) mediaStoreAdapter.findFiles(this);
+		ArrayList<MediaItem> mediaFiles = new ArrayList<MediaItem>();
 		listView = (ListView) findViewById(com.squeed.microgramcaster.R.id.videoFiles);
-
-		adapter = new ArrayAdapterItem(this, R.layout.listview_item, mediaFiles);
-		listView.setAdapter(adapter);
 		OnItemClickListener listener = new OnItemClickListener() {
 
 			@Override
@@ -296,10 +286,31 @@ public class MainActivity extends ActionBarActivity {
 			}
 		};
 		listView.setOnItemLongClickListener(lcListener);
+		
+		adapter = new ArrayAdapterItem(this, R.layout.listview_item, mediaFiles);
+		listView.setAdapter(adapter);
+		
+		try {
+//			mediaFiles = (ArrayList<MediaItem>) mediaStoreAdapter.findFiles(this);
+//			adapter.addAll(mediaFiles);
+			Toast.makeText(this, "Loading castable media items...",  Toast.LENGTH_SHORT);
+			//new ListViewPopulatorTask(this, adapter).execute();
+			boolean fileFound = mediaStoreAdapter.findFilesAsync(this, adapter);
+			if(!fileFound) {
+				dialog.setMessage("No .mp4 files found using the MediaStore API on your device. Please add a file " +
+								  "to your local file system and try again by pressing the refresh button or restarting the app.");
+				dialog.show();
+			}
+		} catch (Throwable t) {
+			dialog.setMessage("An unexpected problem occured loading media files from local storage. Please click the reload icon in the actionbar.");
+			dialog.show();
+			return;
+		}		
 	}
 
 	private void playSelectedMedia(final MediaStoreAdapter mediaStoreAdapter, final ArrayAdapterItem adapter,
 			View arg1, int arg2) {
+		
 		if (mSelectedDevice == null || !mApiClient.isConnected()) {
 			Toast.makeText(MainActivity.this, "No cast device selected", Toast.LENGTH_SHORT).show();
 			adapter.setSelectedPosition(-1);
@@ -313,6 +324,11 @@ public class MainActivity extends ActionBarActivity {
 		adapter.notifyDataSetChanged();
 		String fileName = (String) arg1.getTag();
 		MediaItem mi = mediaStoreAdapter.findFile(MainActivity.this, fileName);
+		if(mi == null) {
+			dialog.setMessage("'" + fileName + "' does not seem to exist on your device anymore, has the file been deleted? Please refresh the video list.");
+			dialog.show();
+			return;
+		}
 		Long durationMillis = mi.getDuration();
 
 		seekBar.setMax((int) (durationMillis / 1000L));
@@ -324,6 +340,7 @@ public class MainActivity extends ActionBarActivity {
 		showSeekbar();
 		if (mApiClient.isConnected()) {
 			resetToLandscape();
+			loadingDialog.setTitle("Loading");
 			loadingDialog.setMessage("Loading '"+fileName+"'");
 			loadingDialog.show();
 			sendMessage(CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));			
@@ -413,6 +430,9 @@ public class MainActivity extends ActionBarActivity {
 		@Override
 		public void onRouteSelected(MediaRouter router, android.support.v7.media.MediaRouter.RouteInfo route) {
 			mSelectedDevice = CastDevice.getFromBundle(route.getExtras());
+			loadingDialog.setTitle("Connecting...");
+			loadingDialog.setMessage("Please wait a moment while connecting to Chromecast");
+			loadingDialog.show();
 			launchReceiver();
 		}
 
@@ -495,6 +515,7 @@ public class MainActivity extends ActionBarActivity {
 			if (mApiClient == null) {
 				// We got disconnected while this runnable was pending
 				// execution.
+				loadingDialog.hide();
 				return;
 			}
 
@@ -520,32 +541,33 @@ public class MainActivity extends ActionBarActivity {
 							new ResultCallback<Cast.ApplicationConnectionResult>() {
 								@Override
 								public void onResult(ApplicationConnectionResult result) {
-									Status status = result.getStatus();
-									
-									if (status.isSuccess()) {
-										ApplicationMetadata applicationMetadata = result.getApplicationMetadata();
-										String sessionId = result.getSessionId();
-										String applicationStatus = result.getApplicationStatus();
-										boolean wasLaunched = result.getWasLaunched();
+									try {
+										Status status = result.getStatus();
 										
-										mApplicationStarted = true;
+										if (status.isSuccess()) {
+//											ApplicationMetadata applicationMetadata = result.getApplicationMetadata();
+//											String sessionId = result.getSessionId();
+//											String applicationStatus = result.getApplicationStatus();
+//											boolean wasLaunched = result.getWasLaunched();
+//											
+											mApplicationStarted = true;
 
-										// Create the custom message
-										// channel
-										mMicrogramCasterChannel = new MicrogramCasterChannel(MainActivity.this);
-										try {
-											Cast.CastApi.setMessageReceivedCallbacks(mApiClient,
-													mMicrogramCasterChannel.getNamespace(), mMicrogramCasterChannel);
-										} catch (IOException e) {
-											Log.e(TAG, "Exception while creating channel", e);
+											// Create the custom message
+											// channel
+											mMicrogramCasterChannel = new MicrogramCasterChannel(MainActivity.this);
+											try {
+												Cast.CastApi.setMessageReceivedCallbacks(mApiClient,
+														mMicrogramCasterChannel.getNamespace(), mMicrogramCasterChannel);
+											} catch (IOException e) {
+												Log.e(TAG, "Exception while creating channel", e);
+											}
+											
+										} else {
+											Log.e(TAG, "application could not launch");
+											teardown();
 										}
-
-										// set the initial instructions
-										// on the receiver
-										// sendMessage(getString(R.string.app_name));
-									} else {
-										Log.e(TAG, "application could not launch");
-										teardown();
+									} finally {
+										loadingDialog.hide();
 									}
 								}
 							});
@@ -613,7 +635,7 @@ public class MainActivity extends ActionBarActivity {
 		@Override
 		public void onConnectionFailed(ConnectionResult result) {
 			Log.e(TAG, "onConnectionFailed ");
-
+			loadingDialog.hide();
 			teardown();
 		}
 	}
@@ -649,7 +671,7 @@ public class MainActivity extends ActionBarActivity {
 		return super.dispatchKeyEvent(event);
 	}
 	
-	private Object mutex = new Object();
+	private final Object mutex = new Object();
 	private boolean backPressed = false;
 	private Handler handler = new Handler();
 	
@@ -667,6 +689,7 @@ public class MainActivity extends ActionBarActivity {
 	public void onBackPressed() {
 		if(backPressed) {
 			handler.removeCallbacks(resetBackButtonState);
+			teardown();
 			super.onBackPressed();
 		} else {
 			Toast.makeText(this, "Are you sure you want to leave the application? Press back again to confirm. " +
