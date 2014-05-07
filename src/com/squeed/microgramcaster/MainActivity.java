@@ -184,7 +184,6 @@ public class MainActivity extends ActionBarActivity {
 			// End media router discovery
 			mMediaRouter.removeCallback(mMediaRouterCallback);
 		}
-		teardown();
 		super.onPause();
 	}
 
