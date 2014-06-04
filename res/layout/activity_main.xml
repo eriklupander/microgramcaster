@@ -2,6 +2,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clickable="false"
+    android:fadingEdge="vertical"
+    android:longClickable="false"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     tools:context=".MainActivity" >
@@ -16,26 +19,73 @@
         android:textAppearance="?android:attr/textAppearanceLarge" />
     
      <ListView
-        android:id="@+id/videoFiles"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/linearLayout1"
-        android:layout_below="@+id/textView1"
-        android:layout_centerHorizontal="true"
-        android:choiceMode="singleChoice" >
+         android:id="@+id/videoFiles"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_above="@+id/statusText"
+         android:layout_below="@+id/textView1"
+         android:layout_centerHorizontal="true"
+         android:choiceMode="singleChoice" >
+
     </ListView>
 
     <LinearLayout
         android:id="@+id/linearLayout1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/videoFiles"
         android:layout_alignParentBottom="true"
-        android:layout_alignRight="@+id/videoFiles"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
         android:focusable="true"
         android:gravity="center"
         android:paddingBottom="6dp"
         android:paddingTop="6dp" >
+<!-- 
+        <ProgressBar
+            android:id="@+id/progressBar1"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxHeight="48dp"
+            android:maxWidth="48dp"
+            android:minHeight="48dp"
+            android:minWidth="48dp"
+            android:visibility="visible" />
+ -->
+ 		<ImageView
+            android:id="@+id/action_placeholder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:maxHeight="64dp"
+            android:maxWidth="64dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/round_placeholder_icon_hugey"
+            android:title="@string/placeholder"
+            android:visibility="visible" />
+        <ImageView
+            android:id="@+id/action_play"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:maxHeight="64dp"
+            android:maxWidth="64dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/round_play_icon_huge"
+            android:title="@string/play"
+            android:visibility="gone" />
+        
+        <ImageView
+            android:id="@+id/action_pause"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:maxHeight="64dp"
+            android:maxWidth="64dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/round_pause_icon_huge"
+            android:title="@string/pause"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/currentPosition"
@@ -44,6 +94,8 @@
             android:text="@string/timeDigits"
             android:textSize="12sp"
             android:visibility="invisible" />
+
+       
 
         <SeekBar
             android:id="@+id/seekBar1"
@@ -62,5 +114,15 @@
             android:textSize="12sp"
             android:visibility="invisible" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/linearLayout1"
+        android:layout_centerHorizontal="true"
+        android:text=""
+        android:textSize="10sp"
+        android:visibility="gone" />
 
 </RelativeLayout>

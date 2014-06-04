@@ -23,9 +23,11 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -47,6 +49,7 @@ import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaStoreAdapter;
 import com.squeed.microgramcaster.server.MyHTTPD;
 import com.squeed.microgramcaster.server.WebServerService;
+import com.squeed.microgramcaster.upnp.UPnPHandler;
 import com.squeed.microgramcaster.util.TimeFormatter;
 import com.squeed.microgramcaster.util.WifiHelper;
 
@@ -84,17 +87,22 @@ public class MainActivity extends ActionBarActivity {
 	private boolean mWaitingForReconnect;
 
 	private MenuItem rotateIcon;
-	private MenuItem playIcon;
-	private MenuItem pauseIcon;
+	private ImageView playIcon;
+	private ImageView pauseIcon;
+	private ImageView placeholderIcon;
 
+//	private ProgressBar progressBar;
 	private SeekBar seekBar;
-	private ArrayAdapterItem adapter;
+	private MediaItemArrayAdapter adapter;
 
 	private TextView currentPosition;
 	private TextView totalDuration;
+	private TextView statusText;
 	
 	private ProgressDialog loadingDialog;
 	private AlertDialog dialog;
+
+	private UPnPHandler uPnPHandler;
 	
 
 	@Override
@@ -105,8 +113,18 @@ public class MainActivity extends ActionBarActivity {
 		startWebServer();
 		initMediaRouter();
 		listVideoFiles();
+		initMediaControlButtons();
 		initSeekBar();		
 	}
+
+	
+
+	private void initUPnP() {
+		uPnPHandler = new UPnPHandler(this);
+		uPnPHandler.initUPnpService();		
+	}
+
+
 
 	private void initDialogs() {
 		this.loadingDialog = new ProgressDialog(this);
@@ -150,6 +168,11 @@ public class MainActivity extends ActionBarActivity {
 			}
 
 		});
+		
+		statusText = (TextView) findViewById(R.id.statusText);
+		
+//		progressBar = (ProgressBar) findViewById(R.id.progressBar1);
+//		progressBar.setVisibility(View.GONE);
 	}
 
 	private void showSeekbar() {
@@ -191,6 +214,8 @@ public class MainActivity extends ActionBarActivity {
 	public void onDestroy() {
 		teardown();
 		super.onDestroy();
+		if(uPnPHandler != null)
+			uPnPHandler.destroyUPnpService();
 	}
 
 	private void initMediaRouter() {
@@ -224,21 +249,27 @@ public class MainActivity extends ActionBarActivity {
 	public void onEventPlaying(int positionSeconds) {
 		currentSeekbarPosition = positionSeconds;
 		seekBarHandler.removeCallbacksAndMessages(null);
-		playIcon.setVisible(false);
-		pauseIcon.setVisible(true);
+		playIcon.setVisibility(View.GONE);
+		pauseIcon.setVisibility(View.VISIBLE);
+		placeholderIcon.setVisibility(View.GONE);
+		// progressBar.setVisibility(View.GONE);
 		loadingDialog.hide();
 		
 		// Send a position request directly as the sync between what the html5 player callbacks says and the actual
 		// time when this callback is invoked differ by a few seconds for some reason. It's a bit like 'playing'
 		// fires 2-3 seconds before the playback actually starts.
 		sendMessage(CommandFactory.buildRequestPositionCommand());
+		statusText.setVisibility(View.VISIBLE);
+		statusText.setText("Currently playing '" + adapter.getItem(adapter.getSelectedPosition()).getName() + "' on '" + mSelectedDevice.getFriendlyName() + "'");
 	}
 
 	public void onEventPaused(int positionSeconds) {
 		currentSeekbarPosition = positionSeconds;
 		seekBarHandler.removeCallbacksAndMessages(null);
-		playIcon.setVisible(true);
-		pauseIcon.setVisible(false);
+		playIcon.setVisibility(View.VISIBLE);
+		pauseIcon.setVisibility(View.GONE);
+		placeholderIcon.setVisibility(View.GONE);
+		//progressBar.setVisibility(View.GONE);
 	}
 
 	public void onEventFinished() {
@@ -250,6 +281,7 @@ public class MainActivity extends ActionBarActivity {
 		loadingDialog.hide();
 		seekBarHandler.removeCallbacksAndMessages(null);
 		hideMediaControlIcons();
+		statusText.setText("Playback has finished");
 	}
 
 	private void resetToLandscape() {
@@ -263,7 +295,8 @@ public class MainActivity extends ActionBarActivity {
 		updateSeekBar();
 	}
 
-	private void listVideoFiles() {
+	public void listVideoFiles() {
+		
 		final MediaStoreAdapter mediaStoreAdapter = new MediaStoreAdapter();
 		ArrayList<MediaItem> mediaFiles = new ArrayList<MediaItem>();
 		listView = (ListView) findViewById(com.squeed.microgramcaster.R.id.videoFiles);
@@ -271,8 +304,14 @@ public class MainActivity extends ActionBarActivity {
 
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View listItemView, int position, long arg3) {
-				playSelectedMedia(mediaStoreAdapter, adapter, listItemView, position);
-			}
+				if(((String) listItemView.getTag(R.id.type)).equals("DLNA_ITEM")) {
+					playDlnaMedia(listItemView, position);
+				} else if(((String) listItemView.getTag(R.id.type)).equals("SMB_FILE")) {
+					
+				} else {
+					playLocalMedia(mediaStoreAdapter, adapter, listItemView, position);	
+				}				
+			}			
 		};
 		listView.setOnItemClickListener(listener);
 		
@@ -286,14 +325,12 @@ public class MainActivity extends ActionBarActivity {
 		};
 		listView.setOnItemLongClickListener(lcListener);
 		
-		adapter = new ArrayAdapterItem(this, R.layout.listview_item, mediaFiles);
+		adapter = new MediaItemArrayAdapter(this, R.layout.listview_item, mediaFiles);
 		listView.setAdapter(adapter);
 		
 		try {
-//			mediaFiles = (ArrayList<MediaItem>) mediaStoreAdapter.findFiles(this);
-//			adapter.addAll(mediaFiles);
+
 			Toast.makeText(this, "Loading castable media items...",  Toast.LENGTH_SHORT);
-			//new ListViewPopulatorTask(this, adapter).execute();
 			boolean fileFound = mediaStoreAdapter.findFilesAsync(this, adapter);
 			if(!fileFound) {
 				dialog.setMessage("No .mp4 files found using the MediaStore API on your device. Please add a file " +
@@ -306,10 +343,8 @@ public class MainActivity extends ActionBarActivity {
 			return;
 		}		
 	}
-
-	private void playSelectedMedia(final MediaStoreAdapter mediaStoreAdapter, final ArrayAdapterItem adapter,
-			View arg1, int arg2) {
-		
+	
+	private void preparePlayMediaItem(String name, Long durationMs, int position) {
 		if (mSelectedDevice == null || !mApiClient.isConnected()) {
 			Toast.makeText(MainActivity.this, "No cast device selected", Toast.LENGTH_SHORT).show();
 			adapter.setSelectedPosition(-1);
@@ -318,9 +353,33 @@ public class MainActivity extends ActionBarActivity {
 					MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
 			return;
 		}
-
-		adapter.setSelectedPosition(arg2);
+		
+		adapter.setSelectedPosition(position);
 		adapter.notifyDataSetChanged();
+
+		seekBar.setMax((int) (durationMs / 1000L));
+		currentPosition.setText(TimeFormatter.formatTime(0));
+		totalDuration.setText(TimeFormatter.formatTime((int) (durationMs / 1000L)));
+
+		currentSeekbarPosition = 0;
+
+		showSeekbar();
+		
+		if (mApiClient.isConnected()) {
+		//	progressBar.setVisibility(View.VISIBLE);
+			playIcon.setVisibility(View.GONE);
+			pauseIcon.setVisibility(View.GONE);
+			placeholderIcon.setVisibility(View.VISIBLE);
+			resetToLandscape();
+			loadingDialog.setTitle("Loading");
+			loadingDialog.setMessage("Loading '" + name +"'");
+			loadingDialog.show();
+		}	
+	}
+
+	private void playLocalMedia(final MediaStoreAdapter mediaStoreAdapter, final MediaItemArrayAdapter adapter,
+			View arg1, int position) {
+		
 		String fileName = (String) arg1.getTag();
 		MediaItem mi = mediaStoreAdapter.findFile(MainActivity.this, fileName);
 		if(mi == null) {
@@ -328,22 +387,16 @@ public class MainActivity extends ActionBarActivity {
 			dialog.show();
 			return;
 		}
-		Long durationMillis = mi.getDuration();
-
-		seekBar.setMax((int) (durationMillis / 1000L));
-		currentPosition.setText(TimeFormatter.formatTime(0));
-		totalDuration.setText(TimeFormatter.formatTime((int) (durationMillis / 1000L)));
-
-		currentSeekbarPosition = 0;
-
-		showSeekbar();
-		if (mApiClient.isConnected()) {
-			resetToLandscape();
-			loadingDialog.setTitle("Loading");
-			loadingDialog.setMessage("Loading '"+fileName+"'");
-			loadingDialog.show();
-			sendMessage(CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));			
-		}
+		preparePlayMediaItem(mi.getName(), mi.getDuration(), position);
+		sendMessage(CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));		
+	}
+	
+	private void playDlnaMedia(View listItemView, int position) {
+		String name = (String) listItemView.getTag(R.id.dlna_name);
+		Long duration = (Long) listItemView.getTag(R.id.dlna_duration); 
+		preparePlayMediaItem(name, duration, position);
+		String url = (String) listItemView.getTag(R.id.dlna_url);
+		sendMessage(CommandFactory.buildPlayUrlCommand(url));	
 	}
 	
 	private boolean itemLongClicked(final MediaStoreAdapter mediaStoreAdapter, View arg1, int arg2) {
@@ -357,6 +410,30 @@ public class MainActivity extends ActionBarActivity {
 		dialog.show();
 		return true;
 	}
+	
+	private void initMediaControlButtons() {
+		playIcon = (ImageView) findViewById(com.squeed.microgramcaster.R.id.action_play);
+		playIcon.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View arg0) {
+				sendMessage(CommandFactory.buildPlayCommand());
+			}
+		});
+		pauseIcon = (ImageView) findViewById(com.squeed.microgramcaster.R.id.action_pause);
+		pauseIcon.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
+				sendMessage(CommandFactory.buildPauseCommand());
+				playIcon.setVisibility(View.VISIBLE);
+				pauseIcon.setVisibility(View.GONE);
+				placeholderIcon.setVisibility(View.GONE);
+			}
+		});
+		placeholderIcon = (ImageView) findViewById(com.squeed.microgramcaster.R.id.action_placeholder);
+		hideMediaControlIcons();
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -369,13 +446,21 @@ public class MainActivity extends ActionBarActivity {
 		// Set the MediaRouteActionProvider selector for device discovery.
 		if (mediaRouteActionProvider != null)
 			mediaRouteActionProvider.setRouteSelector(mMediaRouteSelector);
-
+	
 		MenuItem refreshIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_refresh);
 		refreshIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
 
 			@Override
 			public boolean onMenuItemClick(MenuItem item) {
-				listVideoFiles();
+				if(uPnPHandler == null) {
+					initUPnP();
+				}
+				if(uPnPHandler.getCurrentService() != null) {
+					uPnPHandler.buildContentListing();
+				} else {
+					listVideoFiles();
+				}
+				
 				return false;
 			}
 		});
@@ -396,27 +481,33 @@ public class MainActivity extends ActionBarActivity {
 			}
 		});
 
-		playIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_play);
-		playIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+		
+		
+		// Experimental, search for UPNP stuff
+		MenuItem searchUPnpIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_search_upnp);
+		searchUPnpIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
 
 			@Override
 			public boolean onMenuItemClick(MenuItem item) {
-				sendMessage(CommandFactory.buildPlayCommand());
+				if(uPnPHandler == null) {
+					initUPnP();
+				}
+				uPnPHandler.searchUPnp();
 				return false;
 			}
 		});
-		pauseIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_pause);
-		pauseIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-
-			@Override
-			public boolean onMenuItemClick(MenuItem item) {
-				sendMessage(CommandFactory.buildPauseCommand());
-				playIcon.setVisible(true);
-				pauseIcon.setVisible(false);
-				return false;
-			}
-		});
-		hideMediaControlIcons();
+		
+		// Experimental, search for SMB stuff
+//		MenuItem searchSmbIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_search_smb);
+//		searchSmbIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+//
+//			@Override
+//			public boolean onMenuItemClick(MenuItem item) {
+//				//new SambaExplorer(MainActivity.this).init();
+//				new SmbScannerTask(MainActivity.this, adapter).execute();
+//				return false;
+//			}
+//		});
 		return true;
 	}
 
@@ -445,8 +536,9 @@ public class MainActivity extends ActionBarActivity {
 	}
 
 	private void hideMediaControlIcons() {
-		playIcon.setVisible(false);
-		pauseIcon.setVisible(false);
+		playIcon.setVisibility(View.GONE);
+		pauseIcon.setVisibility(View.GONE);
+		placeholderIcon.setVisibility(View.VISIBLE);
 	}
 
 	/**
@@ -535,6 +627,7 @@ public class MainActivity extends ActionBarActivity {
 						}
 					}
 				} else {
+					
 					// Launch the receiver app
 					Cast.CastApi.launchApplication(mApiClient, APP_NAME, false).setResultCallback(
 							new ResultCallback<Cast.ApplicationConnectionResult>() {
@@ -700,4 +793,13 @@ public class MainActivity extends ActionBarActivity {
 			
 		}
 	}
+	
+	public MediaItemArrayAdapter getMediaItemListAdapter() {
+		return adapter;
+	}
+
+	public ProgressDialog getLoadingDialog() {
+		return loadingDialog;
+	}
+	
 }

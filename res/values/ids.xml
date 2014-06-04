@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="dlna_url" />
+    <item type="id" name="dlna_name" />
+    <item type="id" name="dlna_duration" />
+    <item type="id" name="externalId" />
+    <item type="id" name="type" />
+</resources>

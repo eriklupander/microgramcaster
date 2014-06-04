@@ -22,7 +22,7 @@ app:showAsAction="always"
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" >
-   
+   <!-- 
      <item
         android:id="@+id/action_play"
         android:title="@string/play"
@@ -34,7 +34,7 @@ app:showAsAction="always"
         android:title="@string/pause"
         android:icon="@drawable/ic_media_pause"
         app:showAsAction="ifRoom" />  
-        
+     -->   
     <item
         android:id="@+id/action_rotate"
         android:title="@string/rotate"
@@ -46,6 +46,20 @@ app:showAsAction="always"
         android:title="@string/refresh"
         android:icon="@drawable/ic_menu_refresh"
         app:showAsAction="ifRoom" />
+     
+     <item
+        android:id="@+id/action_search_upnp"
+        android:title="@string/upnp_search"
+        android:icon="@drawable/ic_menu_archive"
+        app:showAsAction="ifRoom" />
+     
+     <!-- 
+      <item
+        android:id="@+id/action_search_smb"
+        android:title="@string/smb_search"
+        android:icon="@drawable/ic_menu_slideshow"
+        app:showAsAction="ifRoom" />
+	 -->        
         
      <item
         android:id="@+id/media_route_menu_item"

@@ -10,7 +10,7 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:contentDescription="@string/thumbnail"
-        android:src="@drawable/ic_launcher" />
+        android:src="@drawable/placeholder" />
 
     <TextView
         android:id="@+id/title"

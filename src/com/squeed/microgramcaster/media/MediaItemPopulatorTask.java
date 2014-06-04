@@ -10,21 +10,21 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
 
-import com.squeed.microgramcaster.ArrayAdapterItem;
+import com.squeed.microgramcaster.MediaItemArrayAdapter;
 
 public class MediaItemPopulatorTask extends AsyncTask<MediaItem, Void, MediaItem>{
 	
 	@SuppressLint("SimpleDateFormat")
 	private static final SimpleDateFormat headerDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
 
-	private final WeakReference<ArrayAdapterItem> listViewReference;
+	private final WeakReference<MediaItemArrayAdapter> listViewReference;
 
 	private Context ctx;
 
-    public MediaItemPopulatorTask(Context ctx, ArrayAdapterItem adapter) {
+    public MediaItemPopulatorTask(Context ctx, MediaItemArrayAdapter adapter) {
         // Use a WeakReference to ensure the ImageView can be garbage collected
     	this.ctx = ctx;
-    	this.listViewReference = new WeakReference<ArrayAdapterItem>(adapter);
+    	this.listViewReference = new WeakReference<MediaItemArrayAdapter>(adapter);
     	
     }
 
@@ -49,7 +49,7 @@ public class MediaItemPopulatorTask extends AsyncTask<MediaItem, Void, MediaItem
     @Override
     protected void onPostExecute(MediaItem mediaItem) {
         if (listViewReference != null && mediaItem != null) {
-            final ArrayAdapterItem adapter = listViewReference.get();
+            final MediaItemArrayAdapter adapter = listViewReference.get();
             if (adapter != null) {            
             	adapter.add(mediaItem);            
             }

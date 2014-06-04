@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.squeed.microgramcaster.ArrayAdapterItem;
+import com.squeed.microgramcaster.MediaItemArrayAdapter;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -66,6 +66,7 @@ public class MediaStoreAdapter {
 				mi.setSize(cur.getLong(3));
 				mi.setLastModified(headerDateFormat.format(new Date(cur.getLong(4))));
 				mi.setDuration(cur.getLong(5));
+				mi.setType("LOCAL");
 				
 				 Bitmap bitmap = MediaStore.Video.Thumbnails.getThumbnail(
 						 	context.getContentResolver(),
@@ -91,7 +92,7 @@ public class MediaStoreAdapter {
 	 * @return
 	 * 		true if at least one file was found
 	 */
-	public boolean findFilesAsync(Context context, ArrayAdapterItem adapter) {
+	public boolean findFilesAsync(Context context, MediaItemArrayAdapter adapter) {
 		String[] retCol = { 
 				MediaStore.Video.Media._ID, 
 				MediaStore.Video.Media.DISPLAY_NAME, 
@@ -118,6 +119,7 @@ public class MediaStoreAdapter {
 				mi.setSize(cur.getLong(3));
 				mi.setLastModified(headerDateFormat.format(new Date(cur.getLong(4))));
 				mi.setDuration(cur.getLong(5));
+				mi.setType("LOCAL");
 				MediaItemPopulatorTask task = new MediaItemPopulatorTask(context, adapter);
 				task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, mi);
 //				 Bitmap bitmap = MediaStore.Video.Thumbnails.getThumbnail(
@@ -160,6 +162,7 @@ public class MediaStoreAdapter {
 				mi.setSize(cur.getLong(3));
 				mi.setLastModified(headerDateFormat.format(new Date(cur.getLong(4))));
 				mi.setDuration(cur.getLong(5));
+				mi.setType("LOCAL");
 				return mi;
 			}
 			return null;
