@@ -60,9 +60,9 @@
             android:maxHeight="64dp"
             android:maxWidth="64dp"
             android:scaleType="centerInside"
-            android:src="@drawable/round_placeholder_icon_hugey"
+            android:src="@drawable/round_hourglass_icon"
             android:title="@string/placeholder"
-            android:visibility="visible" />
+            android:visibility="invisible" />
         <ImageView
             android:id="@+id/action_play"
             android:layout_width="wrap_content"

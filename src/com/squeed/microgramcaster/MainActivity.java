@@ -164,6 +164,10 @@ public class MainActivity extends ActionBarActivity {
 
 			public void onStopTrackingTouch(SeekBar seekBar) {
 				seekBarHandler.removeCallbacksAndMessages(null);
+				playIcon.setVisibility(View.GONE);
+				pauseIcon.setVisibility(View.GONE);
+				placeholderIcon.setVisibility(View.VISIBLE);
+				statusText.setText("Seeking " + TimeFormatter.formatTime(seekBar.getProgress()));
 				sendMessage(CommandFactory.buildSeekPositionCommand(seekBar.getProgress()));
 			}
 
@@ -212,10 +216,11 @@ public class MainActivity extends ActionBarActivity {
 
 	@Override
 	public void onDestroy() {
-		teardown();
-		super.onDestroy();
 		if(uPnPHandler != null)
 			uPnPHandler.destroyUPnpService();
+		teardown();
+		super.onDestroy();
+		
 	}
 
 	private void initMediaRouter() {
@@ -240,6 +245,8 @@ public class MainActivity extends ActionBarActivity {
 
 	protected boolean landscape = true;
 
+	private CurrentMediaItem currentMediaItem;
+
 	public void updateSeekBar() {
 		currentPosition.setVisibility(TextView.VISIBLE);
 		seekBar.setProgress(currentSeekbarPosition++);
@@ -252,6 +259,7 @@ public class MainActivity extends ActionBarActivity {
 		playIcon.setVisibility(View.GONE);
 		pauseIcon.setVisibility(View.VISIBLE);
 		placeholderIcon.setVisibility(View.GONE);
+		//placeholderIcon.setImageResource(R.drawable.round_placeholder_icon_hugey);
 		// progressBar.setVisibility(View.GONE);
 		loadingDialog.hide();
 		
@@ -260,7 +268,7 @@ public class MainActivity extends ActionBarActivity {
 		// fires 2-3 seconds before the playback actually starts.
 		sendMessage(CommandFactory.buildRequestPositionCommand());
 		statusText.setVisibility(View.VISIBLE);
-		statusText.setText("Currently playing '" + adapter.getItem(adapter.getSelectedPosition()).getName() + "' on '" + mSelectedDevice.getFriendlyName() + "'");
+		statusText.setText("Currently playing '" + currentMediaItem.getName() + "' on '" + mSelectedDevice.getFriendlyName() + "'");
 	}
 
 	public void onEventPaused(int positionSeconds) {
@@ -269,6 +277,7 @@ public class MainActivity extends ActionBarActivity {
 		playIcon.setVisibility(View.VISIBLE);
 		pauseIcon.setVisibility(View.GONE);
 		placeholderIcon.setVisibility(View.GONE);
+		
 		//progressBar.setVisibility(View.GONE);
 	}
 
@@ -280,7 +289,10 @@ public class MainActivity extends ActionBarActivity {
 		seekBar.setProgress(0);
 		loadingDialog.hide();
 		seekBarHandler.removeCallbacksAndMessages(null);
-		hideMediaControlIcons();
+		//hideMediaControlIcons();
+		playIcon.setVisibility(View.VISIBLE);
+		pauseIcon.setVisibility(View.GONE);
+		placeholderIcon.setVisibility(View.GONE);
 		statusText.setText("Playback has finished");
 	}
 
@@ -309,7 +321,7 @@ public class MainActivity extends ActionBarActivity {
 				} else if(((String) listItemView.getTag(R.id.type)).equals("SMB_FILE")) {
 					
 				} else {
-					playLocalMedia(mediaStoreAdapter, adapter, listItemView, position);	
+					playLocalMedia(mediaStoreAdapter, listItemView, position);	
 				}				
 			}			
 		};
@@ -366,9 +378,10 @@ public class MainActivity extends ActionBarActivity {
 		showSeekbar();
 		
 		if (mApiClient.isConnected()) {
-		//	progressBar.setVisibility(View.VISIBLE);
+
 			playIcon.setVisibility(View.GONE);
 			pauseIcon.setVisibility(View.GONE);
+
 			placeholderIcon.setVisibility(View.VISIBLE);
 			resetToLandscape();
 			loadingDialog.setTitle("Loading");
@@ -377,8 +390,7 @@ public class MainActivity extends ActionBarActivity {
 		}	
 	}
 
-	private void playLocalMedia(final MediaStoreAdapter mediaStoreAdapter, final MediaItemArrayAdapter adapter,
-			View arg1, int position) {
+	private void playLocalMedia(final MediaStoreAdapter mediaStoreAdapter, View arg1, int position) {
 		
 		String fileName = (String) arg1.getTag();
 		MediaItem mi = mediaStoreAdapter.findFile(MainActivity.this, fileName);
@@ -388,7 +400,9 @@ public class MainActivity extends ActionBarActivity {
 			return;
 		}
 		preparePlayMediaItem(mi.getName(), mi.getDuration(), position);
-		sendMessage(CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName)));		
+		Command cmd = CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName));
+		sendMessage(cmd);		
+		currentMediaItem = new CurrentMediaItem(mi.getName(), mi.getDuration(), position, cmd);
 	}
 	
 	private void playDlnaMedia(View listItemView, int position) {
@@ -396,7 +410,9 @@ public class MainActivity extends ActionBarActivity {
 		Long duration = (Long) listItemView.getTag(R.id.dlna_duration); 
 		preparePlayMediaItem(name, duration, position);
 		String url = (String) listItemView.getTag(R.id.dlna_url);
-		sendMessage(CommandFactory.buildPlayUrlCommand(url));	
+		Command cmd = CommandFactory.buildPlayUrlCommand(url);
+		sendMessage(cmd);	
+		currentMediaItem = new CurrentMediaItem(name, duration, position, cmd);
 	}
 	
 	private boolean itemLongClicked(final MediaStoreAdapter mediaStoreAdapter, View arg1, int arg2) {
@@ -417,7 +433,18 @@ public class MainActivity extends ActionBarActivity {
 			
 			@Override
 			public void onClick(View arg0) {
-				sendMessage(CommandFactory.buildPlayCommand());
+				playIcon.setVisibility(View.GONE);
+				pauseIcon.setVisibility(View.GONE);
+				placeholderIcon.setVisibility(View.VISIBLE);
+				
+				// Check if we want to replay the last item (a bit ugly) or just resume play of the current one.
+				if(currentMediaItem != null && seekBar.getProgress() == 0) {
+					preparePlayMediaItem(currentMediaItem.getName(), currentMediaItem.getDuration(), currentMediaItem.getPosition());
+					sendMessage(currentMediaItem.getPlayCommand());
+				} else {
+					sendMessage(CommandFactory.buildPlayCommand());
+				}
+				
 			}
 		});
 		pauseIcon = (ImageView) findViewById(com.squeed.microgramcaster.R.id.action_pause);
@@ -432,7 +459,15 @@ public class MainActivity extends ActionBarActivity {
 			}
 		});
 		placeholderIcon = (ImageView) findViewById(com.squeed.microgramcaster.R.id.action_placeholder);
+		placeholderIcon.setVisibility(View.INVISIBLE);
 		hideMediaControlIcons();
+	}
+	
+	private void resetMediaControlsOnRescan() {
+		currentMediaItem = null;
+		playIcon.setVisibility(View.GONE);
+		pauseIcon.setVisibility(View.GONE);
+		placeholderIcon.setVisibility(View.INVISIBLE);
 	}
 
 	@Override
@@ -452,6 +487,7 @@ public class MainActivity extends ActionBarActivity {
 
 			@Override
 			public boolean onMenuItemClick(MenuItem item) {
+				resetMediaControlsOnRescan();
 				if(uPnPHandler == null) {
 					initUPnP();
 				}
@@ -463,6 +499,8 @@ public class MainActivity extends ActionBarActivity {
 				
 				return false;
 			}
+
+			
 		});
 
 		rotateIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_rotate);
@@ -489,6 +527,7 @@ public class MainActivity extends ActionBarActivity {
 
 			@Override
 			public boolean onMenuItemClick(MenuItem item) {
+				resetMediaControlsOnRescan();
 				if(uPnPHandler == null) {
 					initUPnP();
 				}
@@ -503,6 +542,7 @@ public class MainActivity extends ActionBarActivity {
 //
 //			@Override
 //			public boolean onMenuItemClick(MenuItem item) {
+//				resetMediaControlsOnRescan();
 //				//new SambaExplorer(MainActivity.this).init();
 //				new SmbScannerTask(MainActivity.this, adapter).execute();
 //				return false;
@@ -538,7 +578,7 @@ public class MainActivity extends ActionBarActivity {
 	private void hideMediaControlIcons() {
 		playIcon.setVisibility(View.GONE);
 		pauseIcon.setVisibility(View.GONE);
-		placeholderIcon.setVisibility(View.VISIBLE);
+		placeholderIcon.setVisibility(View.INVISIBLE);
 	}
 
 	/**

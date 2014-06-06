@@ -10,6 +10,7 @@ import org.fourthline.cling.model.meta.RemoteService;
 import org.fourthline.cling.model.meta.Service;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
+import org.fourthline.cling.transport.RouterException;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -81,25 +82,15 @@ public class UPnPHandler {
 
 
 			/* Discovery performance optimization for very slow Android devices! */
-	        @Override
-	        public void remoteDeviceDiscoveryStarted(Registry registry, RemoteDevice device) {
-	            deviceAdded(device);
-	        }
-
-	        @Override
-	        public void remoteDeviceDiscoveryFailed(Registry registry, final RemoteDevice device, final Exception ex) {
-//	            runOnUiThread(new Runnable() {
-//	                public void run() {
-//	                    Toast.makeText(
-//	                        MainActivity.this,
-//	                        "Discovery failed of '" + device.getDisplayString() + "': "
-//	                            + (ex != null ? ex.toString() : "Couldn't retrieve device/service descriptors"),
-//	                        Toast.LENGTH_LONG
-//	                    ).show();
-//	                }
-//	            });
-	            deviceRemoved(device);
-	        }
+//	        @Override
+//	        public void remoteDeviceDiscoveryStarted(Registry registry, RemoteDevice device) {
+//	            deviceAdded(device);
+//	        }
+//
+//	        @Override
+//	        public void remoteDeviceDiscoveryFailed(Registry registry, final RemoteDevice device, final Exception ex) {
+//	            deviceRemoved(device);
+//	        }
 	        /* End of optimization, you can remove the whole block if your Android handset is fast (>= 600 Mhz) */
 
 	        @Override
@@ -164,11 +155,12 @@ public class UPnPHandler {
 		}
 	    
 	    public void destroyUPnpService() {
+	    	
 	    	if (upnpService != null) {
-	            upnpService.getRegistry().removeListener(registryListener);
-	        }
+	    		upnpService.getRegistry().removeListener(registryListener);	    		
+	    	}
 	        // This will stop the UPnP service if nobody else is bound to it
-	    	activity.getApplicationContext().unbindService(serviceConnection);
+	    	activity.getApplicationContext().unbindService(serviceConnection);	    	
 	    }
 	    
 	    public void searchUPnp() {
@@ -179,7 +171,8 @@ public class UPnPHandler {
 	    		upnpService.getRegistry().removeAllRemoteDevices();
 	            upnpService.getControlPoint().search();
 	    	} else {
-	    		Toast.makeText(activity, "UPnpService not initialized.", Toast.LENGTH_LONG).show();
+	    		// Probably unnecessary...
+	    		// Toast.makeText(activity, "UPnpService not initialized.", Toast.LENGTH_LONG).show();
 	    	}
 	    	showUPnPDeviceListDialog();
 	    }

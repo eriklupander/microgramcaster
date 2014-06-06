@@ -15,7 +15,7 @@ public class BrowserUpnpService extends AndroidUpnpServiceImpl {
 
             @Override
             public int getRegistryMaintenanceIntervalMillis() {
-                return 15000;
+                return 5000;
             }
   
             @Override
