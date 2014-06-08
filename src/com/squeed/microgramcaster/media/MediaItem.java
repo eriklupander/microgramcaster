@@ -99,7 +99,4 @@ public class MediaItem {
 			return false;
 		return true;
 	}
-	
-	
-	
 }

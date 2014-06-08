@@ -45,6 +45,7 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         convertView.setTag(objectItem.getName());
         convertView.setTag(R.id.externalId, objectItem.getExternalId());
         convertView.setTag(R.id.type, objectItem.getType());
+        
         convertView.setTag(R.id.dlna_url, objectItem.getData());
         convertView.setTag(R.id.dlna_name, objectItem.getName());
         convertView.setTag(R.id.dlna_duration, objectItem.getDuration());
@@ -55,7 +56,15 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         title.setTag(objectItem.getName());
         
         TextView duration = (TextView) convertView.findViewById(R.id.duration);
-        duration.setText(TimeFormatter.formatTime((int)(objectItem.getDuration() / 1000)));
+        if(objectItem.getDuration() != null) {
+        	duration.setText(TimeFormatter.formatTime((int)(objectItem.getDuration() / 1000)));
+        } else if(objectItem.getType().equals("DLNA_BACK")) {        	
+        	duration.setText("");
+        } else {
+        	duration.setText("Folder");
+        }
+        
+        
         
         ImageView thumb = (ImageView) convertView.findViewById(R.id.thumb);
         if(objectItem.getThumbnail() != null) {
@@ -64,8 +73,7 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         
         if(selectedPosition == position){
         	convertView.setBackgroundResource(R.color.pressed_color);
-        }
-        else{
+        } else {
         	convertView.setBackgroundResource(android.graphics.Color.TRANSPARENT);
         }
        

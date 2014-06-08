@@ -10,7 +10,6 @@ import org.fourthline.cling.model.meta.RemoteService;
 import org.fourthline.cling.model.meta.Service;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
-import org.fourthline.cling.transport.RouterException;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -28,7 +27,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.squeed.microgramcaster.MainActivity;
 import com.squeed.microgramcaster.R;
@@ -206,8 +204,8 @@ public class UPnPHandler {
 						for (RemoteService service : currentDevice.getServices()) {
 			                if (service.getServiceType().getType().equals("ContentDirectory")) {
 			                	currentService = service;	
-			                	
-			                	dlnaContentListingBuilder.startBuildDLNAContentListing();
+			                	dlnaContentListingBuilder.clearContainerIdStack();
+			                	dlnaContentListingBuilder.buildFolderListing(null);
 			                }
 			            }
 					}
@@ -255,7 +253,12 @@ public class UPnPHandler {
 			return upnpService;
 		}
 
-		public void buildContentListing() {
-			dlnaContentListingBuilder.startBuildDLNAContentListing();
+		public void buildContentListing(String containerId) {
+			//dlnaContentListingBuilder.startBuildDLNAContentListing();
+			dlnaContentListingBuilder.buildFolderListing(containerId);
+		}
+
+		public void handleUpPressed() {
+			dlnaContentListingBuilder.popContainerIdStack();
 		}
 }

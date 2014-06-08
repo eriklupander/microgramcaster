@@ -26,7 +26,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
@@ -268,7 +267,10 @@ public class MainActivity extends ActionBarActivity {
 		// fires 2-3 seconds before the playback actually starts.
 		sendMessage(CommandFactory.buildRequestPositionCommand());
 		statusText.setVisibility(View.VISIBLE);
-		statusText.setText("Currently playing '" + currentMediaItem.getName() + "' on '" + mSelectedDevice.getFriendlyName() + "'");
+		if(currentMediaItem !=  null && mSelectedDevice != null) {
+			statusText.setText("Currently playing '" + currentMediaItem.getName() + "' on '" + mSelectedDevice.getFriendlyName() + "'");	
+		}
+		
 	}
 
 	public void onEventPaused(int positionSeconds) {
@@ -318,6 +320,11 @@ public class MainActivity extends ActionBarActivity {
 			public void onItemClick(AdapterView<?> arg0, View listItemView, int position, long arg3) {
 				if(((String) listItemView.getTag(R.id.type)).equals("DLNA_ITEM")) {
 					playDlnaMedia(listItemView, position);
+				} else if(((String) listItemView.getTag(R.id.type)).equals("DLNA_FOLDER")) {
+					uPnPHandler.buildContentListing((String) listItemView.getTag(R.id.dlna_url)); // dlna_url == containerId in this case
+				} else if(((String) listItemView.getTag(R.id.type)).equals("DLNA_BACK")) {
+					uPnPHandler.handleUpPressed();
+					uPnPHandler.buildContentListing((String) listItemView.getTag(R.id.dlna_url)); // dlna_url == containerId in this case
 				} else if(((String) listItemView.getTag(R.id.type)).equals("SMB_FILE")) {
 					
 				} else {
@@ -328,14 +335,14 @@ public class MainActivity extends ActionBarActivity {
 		listView.setOnItemClickListener(listener);
 		
 		
-		OnItemLongClickListener lcListener = new OnItemLongClickListener() {
-
-			@Override
-			public boolean onItemLongClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-				return itemLongClicked(mediaStoreAdapter, arg1, arg2);
-			}
-		};
-		listView.setOnItemLongClickListener(lcListener);
+//		OnItemLongClickListener lcListener = new OnItemLongClickListener() {
+//
+//			@Override
+//			public boolean onItemLongClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+//				return itemLongClicked(mediaStoreAdapter, arg1, arg2);
+//			}
+//		};
+//		listView.setOnItemLongClickListener(lcListener);
 		
 		adapter = new MediaItemArrayAdapter(this, R.layout.listview_item, mediaFiles);
 		listView.setAdapter(adapter);
@@ -492,7 +499,7 @@ public class MainActivity extends ActionBarActivity {
 					initUPnP();
 				}
 				if(uPnPHandler.getCurrentService() != null) {
-					uPnPHandler.buildContentListing();
+					uPnPHandler.buildContentListing(null);
 				} else {
 					listVideoFiles();
 				}
