@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="@string/settings" >
+
+    <PreferenceCategory android:title="@string/preferencesHeading" >
+        <CheckBoxPreference
+            android:name="@string/show_unplayable"
+            android:defaultValue="false"
+            android:key="show_unplayable"
+            android:summary="@string/show_unplayable_desc"
+            android:title="@string/show_unplayable" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

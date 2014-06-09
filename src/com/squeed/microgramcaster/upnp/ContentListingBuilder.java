@@ -15,8 +15,10 @@ import org.fourthline.cling.support.model.DIDLObject;
 import org.fourthline.cling.support.model.container.Container;
 import org.fourthline.cling.support.model.item.Item;
 
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.squeed.microgramcaster.MainActivity;
@@ -33,10 +35,12 @@ public class ContentListingBuilder {
 	private UPnPHandler upnpHandler;
 	private static final String TAG = "ContentListingBuilder";
 	private Stack<String> containerStack = new Stack<String>();
+	private SharedPreferences preferences;
 	
 	public ContentListingBuilder(MainActivity activity, UPnPHandler upnpHandler) {
 		this.activity = activity;
-		this.upnpHandler = upnpHandler;		
+		this.upnpHandler = upnpHandler;	
+		this.preferences = PreferenceManager.getDefaultSharedPreferences(activity);
 	}
 	
 //	public void startBuildDLNAContentListing() {
@@ -128,10 +132,12 @@ public class ContentListingBuilder {
 												
 					
 						// For now, only add mp4 files.
-						if(mi.getData().toLowerCase().trim().endsWith("mp4")) {
+						
+						if(preferences.getBoolean("show_unplayable", false) || mi.getData().toLowerCase().trim().endsWith("mp4")) {
 							itemAdded = true;
 							Log.i(TAG , "Found mp4 " + mi.getData());
 							addThumbnailBitmap(item, mi);
+							
 							activity.runOnUiThread(new Runnable() {
 								
 								@Override
@@ -155,13 +161,18 @@ public class ContentListingBuilder {
 		    		}
 					for(Container item : didl.getContainers()) {
 							itemAdded = true;
-							//buildFlatSet(service, item.getId());
+							
 							final MediaItem mi = new MediaItem();
 							mi.setName(item.getTitle());
 							mi.setData(item.getId());
-							addThumbnailBitmap(item, mi);
+							boolean thumbNailAdded = addThumbnailBitmap(item, mi);
+							if(!thumbNailAdded) {
+								Bitmap scaledBitmap = Bitmap.createScaledBitmap(
+										BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_menu_archive96)
+								,96,96, true);
+								mi.setThumbnail(scaledBitmap);
+							}
 							mi.setType("DLNA_FOLDER");
-							//items.add(mi);
 							activity.runOnUiThread(new Runnable() {
 								
 								@Override
@@ -189,7 +200,7 @@ public class ContentListingBuilder {
 	    		}
 		    }
 
-			private void addThumbnailBitmap(DIDLObject item, final MediaItem mi) {
+			private boolean addThumbnailBitmap(DIDLObject item, final MediaItem mi) {
 				URI firstPropertyValue = item.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class);
 				String thumbnailUrl = firstPropertyValue != null ? firstPropertyValue.toString() : null;
 				if(thumbnailUrl != null) {
@@ -198,10 +209,12 @@ public class ContentListingBuilder {
 								BitmapFactory.decodeStream((InputStream) new URL(thumbnailUrl).getContent())
 						,96,96, true);
 						mi.setThumbnail(scaledBitmap);
+						return true;
 				    } catch (Exception e){
 				    	Log.e("ContentListingBuilder", e.getMessage());
 				    }
 				}
+				return false;
 			}
 		    
 		    @Override

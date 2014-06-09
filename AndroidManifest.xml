@@ -36,6 +36,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+         <activity
+		        android:name="com.squeed.microgramcaster.Preferences"
+		        android:label="@string/preferencesHeading">
+		</activity>
 
         <service
             android:name="com.squeed.microgramcaster.server.WebServerService"

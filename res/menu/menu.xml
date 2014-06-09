@@ -59,7 +59,13 @@ app:showAsAction="always"
         android:title="@string/smb_search"
         android:icon="@drawable/ic_menu_slideshow"
         app:showAsAction="ifRoom" />
-	 -->        
+	 -->   
+	 
+	  <item
+        android:id="@+id/action_settings"
+        android:title="@string/settings"
+        android:icon="@drawable/ic_menu_settings_holo_light"
+        app:showAsAction="ifRoom" />     
         
      <item
         android:id="@+id/media_route_menu_item"

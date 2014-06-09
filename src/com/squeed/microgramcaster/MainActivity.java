@@ -1,7 +1,6 @@
 package com.squeed.microgramcaster;
 
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
 import org.json.JSONException;
@@ -11,8 +10,10 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.MediaRouteActionProvider;
@@ -43,7 +44,6 @@ import com.google.android.gms.common.api.Status;
 import com.squeed.microgramcaster.channel.Command;
 import com.squeed.microgramcaster.channel.CommandFactory;
 import com.squeed.microgramcaster.channel.MicrogramCasterChannel;
-import com.squeed.microgramcaster.media.IsoFileUtil;
 import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaStoreAdapter;
 import com.squeed.microgramcaster.server.MyHTTPD;
@@ -90,7 +90,6 @@ public class MainActivity extends ActionBarActivity {
 	private ImageView pauseIcon;
 	private ImageView placeholderIcon;
 
-//	private ProgressBar progressBar;
 	private SeekBar seekBar;
 	private MediaItemArrayAdapter adapter;
 
@@ -103,6 +102,8 @@ public class MainActivity extends ActionBarActivity {
 
 	private UPnPHandler uPnPHandler;
 	
+	private SharedPreferences preferences;
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -113,7 +114,8 @@ public class MainActivity extends ActionBarActivity {
 		initMediaRouter();
 		listVideoFiles();
 		initMediaControlButtons();
-		initSeekBar();		
+		initSeekBar();
+		preferences = PreferenceManager.getDefaultSharedPreferences(this);
 	}
 
 	
@@ -151,7 +153,7 @@ public class MainActivity extends ActionBarActivity {
 		totalDuration = (TextView) findViewById(R.id.totalDuration);
 		seekBar = (SeekBar) findViewById(R.id.seekBar1);
 		seekBar.setEnabled(false);
-		// seekBar.setVisibility(SeekBar.INVISIBLE);
+
 		seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 				currentPosition.setText(TimeFormatter.formatTime(progress));
@@ -173,9 +175,6 @@ public class MainActivity extends ActionBarActivity {
 		});
 		
 		statusText = (TextView) findViewById(R.id.statusText);
-		
-//		progressBar = (ProgressBar) findViewById(R.id.progressBar1);
-//		progressBar.setVisibility(View.GONE);
 	}
 
 	private void showSeekbar() {
@@ -258,8 +257,8 @@ public class MainActivity extends ActionBarActivity {
 		playIcon.setVisibility(View.GONE);
 		pauseIcon.setVisibility(View.VISIBLE);
 		placeholderIcon.setVisibility(View.GONE);
-		//placeholderIcon.setImageResource(R.drawable.round_placeholder_icon_hugey);
-		// progressBar.setVisibility(View.GONE);
+		rotateIcon.setVisible(true);
+
 		loadingDialog.hide();
 		
 		// Send a position request directly as the sync between what the html5 player callbacks says and the actual
@@ -279,8 +278,7 @@ public class MainActivity extends ActionBarActivity {
 		playIcon.setVisibility(View.VISIBLE);
 		pauseIcon.setVisibility(View.GONE);
 		placeholderIcon.setVisibility(View.GONE);
-		
-		//progressBar.setVisibility(View.GONE);
+		rotateIcon.setVisible(true);
 	}
 
 	public void onEventFinished() {
@@ -291,7 +289,8 @@ public class MainActivity extends ActionBarActivity {
 		seekBar.setProgress(0);
 		loadingDialog.hide();
 		seekBarHandler.removeCallbacksAndMessages(null);
-		//hideMediaControlIcons();
+		rotateIcon.setVisible(false);
+
 		playIcon.setVisibility(View.VISIBLE);
 		pauseIcon.setVisibility(View.GONE);
 		placeholderIcon.setVisibility(View.GONE);
@@ -326,23 +325,14 @@ public class MainActivity extends ActionBarActivity {
 					uPnPHandler.handleUpPressed();
 					uPnPHandler.buildContentListing((String) listItemView.getTag(R.id.dlna_url)); // dlna_url == containerId in this case
 				} else if(((String) listItemView.getTag(R.id.type)).equals("SMB_FILE")) {
-					
+					// TODO not implemented yet
 				} else {
 					playLocalMedia(mediaStoreAdapter, listItemView, position);	
 				}				
 			}			
 		};
 		listView.setOnItemClickListener(listener);
-		
-		
-//		OnItemLongClickListener lcListener = new OnItemLongClickListener() {
-//
-//			@Override
-//			public boolean onItemLongClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-//				return itemLongClicked(mediaStoreAdapter, arg1, arg2);
-//			}
-//		};
-//		listView.setOnItemLongClickListener(lcListener);
+
 		
 		adapter = new MediaItemArrayAdapter(this, R.layout.listview_item, mediaFiles);
 		listView.setAdapter(adapter);
@@ -399,10 +389,15 @@ public class MainActivity extends ActionBarActivity {
 
 	private void playLocalMedia(final MediaStoreAdapter mediaStoreAdapter, View arg1, int position) {
 		
-		String fileName = (String) arg1.getTag();
+		String fileName = (String) arg1.getTag(R.id.name);
 		MediaItem mi = mediaStoreAdapter.findFile(MainActivity.this, fileName);
 		if(mi == null) {
 			dialog.setMessage("'" + fileName + "' does not seem to exist on your device anymore, has the file been deleted? Please refresh the video list.");
+			dialog.show();
+			return;
+		}
+		if(!fileName.endsWith(".mp4")) {
+			dialog.setMessage("The Chromecast cannot play " + fileName.substring(fileName.lastIndexOf(".")) + " files, you'll have to convert this file to .mp4");
 			dialog.show();
 			return;
 		}
@@ -413,25 +408,20 @@ public class MainActivity extends ActionBarActivity {
 	}
 	
 	private void playDlnaMedia(View listItemView, int position) {
+		String url = (String) listItemView.getTag(R.id.dlna_url);
+		if(!url.endsWith(".mp4")) {
+			dialog.setMessage("The Chromecast cannot play " + url.substring(url.lastIndexOf(".")) + " files, you'll have to convert this file to .mp4");
+			dialog.show();
+			return;
+		}
+		
 		String name = (String) listItemView.getTag(R.id.dlna_name);
 		Long duration = (Long) listItemView.getTag(R.id.dlna_duration); 
 		preparePlayMediaItem(name, duration, position);
-		String url = (String) listItemView.getTag(R.id.dlna_url);
+		
 		Command cmd = CommandFactory.buildPlayUrlCommand(url);
 		sendMessage(cmd);	
 		currentMediaItem = new CurrentMediaItem(name, duration, position, cmd);
-	}
-	
-	private boolean itemLongClicked(final MediaStoreAdapter mediaStoreAdapter, View arg1, int arg2) {
-		String fileName = (String) arg1.getTag();
-		adapter.setSelectedPosition(arg2);
-		adapter.notifyDataSetChanged();
-		FileChannel fileChannel = mediaStoreAdapter.getFileChannel(MainActivity.this, fileName);
-		String txt = IsoFileUtil.getInfo(fileChannel);
-	
-		dialog.setMessage(txt);
-		dialog.show();
-		return true;
 	}
 	
 	private void initMediaControlButtons() {
@@ -502,12 +492,9 @@ public class MainActivity extends ActionBarActivity {
 					uPnPHandler.buildContentListing(null);
 				} else {
 					listVideoFiles();
-				}
-				
+				}				
 				return false;
-			}
-
-			
+			}			
 		});
 
 		rotateIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_rotate);
@@ -525,7 +512,7 @@ public class MainActivity extends ActionBarActivity {
 				return false;
 			}
 		});
-
+		rotateIcon.setVisible(false);
 		
 		
 		// Experimental, search for UPNP stuff
@@ -541,6 +528,18 @@ public class MainActivity extends ActionBarActivity {
 				uPnPHandler.searchUPnp();
 				return false;
 			}
+		});
+		
+		MenuItem settingsIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_settings);
+		settingsIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+			@Override
+			public boolean onMenuItemClick(MenuItem item) {
+				Intent settingsActivity = new Intent(getBaseContext(),
+                        Preferences.class);
+				startActivity(settingsActivity);
+				return false;
+			}			
 		});
 		
 		// Experimental, search for SMB stuff

@@ -19,5 +19,8 @@
 	
 	<string name="upnp_search">Search UPnp</string>
 	<string name="smb_search">Search UPnp</string>
+	<string name="preferencesHeading">Preferences</string>
+	<string name="show_unplayable">Show uncastable items</string>
+	<string name="show_unplayable_desc">When browsing media, show items (avi, mpg, wmv...) that the Chromecast can\'t playback</string>
 </resources>
 
