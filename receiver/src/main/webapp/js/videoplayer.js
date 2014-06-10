@@ -28,6 +28,12 @@ var videoplayer = new function() {
         //microgramcaster.sendPlaying(curr);
         lastCurrentPosition = Math.floor(curr);
 
+        if(typeof currentlyPlayingTitle != 'undefined' && currentlyPlayingTitle != null) {
+            microgramcaster.displayText('Playing \'' + currentlyPlayingTitle + '\'');
+        } else {
+            microgramcaster.displayText('Playing \'' + lastSegment(playerObject.currentSrc));
+        }
+
         $("video").bind("timeupdate", timeUpdateAfterStartCallback);
     });
 
@@ -144,10 +150,14 @@ var videoplayer = new function() {
              return "video/mp4";
          } else if(endsWith(url, ".ogv")) {
              return "video/ogv";
+         } else if(endsWith(url, ".ogg")) {
+             return "video/ogg";
          } else if(endsWith(url, ".3gp")) {
              return "video/3gp";
          } else if(endsWith(url, ".vp8")) {
              return "video/vp8";
+         } else if(endsWith(url, ".mkv")) {
+             return "video/x-matroska";
          } else {
              return "video/mp4";
          }
