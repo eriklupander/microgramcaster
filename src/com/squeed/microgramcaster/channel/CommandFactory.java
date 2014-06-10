@@ -7,9 +7,10 @@ package com.squeed.microgramcaster.channel;
  */
 public class CommandFactory {
 
-	public static Command buildPlayUrlCommand(String mediaItemURL) {
+	public static Command buildPlayUrlCommand(String mediaItemURL, String title) {
 		Command cmd = new Command(CommandDef.CMD_PLAY_URL.name());
 		cmd.addParameter(ChannelDef.PARAM_URL, mediaItemURL);
+		cmd.addParameter(ChannelDef.PARAM_TITLE, title);
 		return cmd;
 	}
 	

@@ -9,6 +9,10 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
+        android:maxWidth="96px"
+        android:maxHeight="96px"
+        android:minWidth="96px"
+        android:minHeight="96px"
         android:contentDescription="@string/thumbnail"
         android:src="@drawable/placeholder" />
 

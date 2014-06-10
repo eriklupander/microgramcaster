@@ -122,13 +122,6 @@ public class MediaStoreAdapter {
 				mi.setType("LOCAL");
 				MediaItemPopulatorTask task = new MediaItemPopulatorTask(context, adapter);
 				task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, mi);
-//				 Bitmap bitmap = MediaStore.Video.Thumbnails.getThumbnail(
-//						 	context.getContentResolver(),
-//						 	mi.getId(),
-//			                MediaStore.Video.Thumbnails.MICRO_KIND,
-//			                (BitmapFactory.Options) null );
-//				 mi.setThumbnail(bitmap);
-//				mediaItems.add(mi);
 			}		
 			
 			cur.close();

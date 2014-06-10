@@ -41,6 +41,10 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.squeed.microgramcaster.channel.Command;
 import com.squeed.microgramcaster.channel.CommandFactory;
 import com.squeed.microgramcaster.channel.MicrogramCasterChannel;
@@ -109,6 +113,7 @@ public class MainActivity extends ActionBarActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(com.squeed.microgramcaster.R.layout.activity_main);
+		initImageLoader();
 		initDialogs();
 		startWebServer();
 		initMediaRouter();
@@ -119,6 +124,23 @@ public class MainActivity extends ActionBarActivity {
 	}
 
 	
+
+	private void initImageLoader() {
+
+		DisplayImageOptions defaultOptions = new DisplayImageOptions.Builder()
+			.cacheInMemory(true)
+			.cacheOnDisk(true)
+			.imageScaleType(ImageScaleType.EXACTLY) 
+			.build();
+		
+		ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
+			.defaultDisplayImageOptions(defaultOptions)
+			.build();
+		
+		ImageLoader.getInstance().init(config);
+	}
+
+
 
 	private void initUPnP() {
 		uPnPHandler = new UPnPHandler(this);
@@ -460,11 +482,16 @@ public class MainActivity extends ActionBarActivity {
 		hideMediaControlIcons();
 	}
 	
+	/**
+	 * Resets the play/pause buttons when searching for new media sources - if no clip is currently playing.
+	 */
 	private void resetMediaControlsOnRescan() {
-		currentMediaItem = null;
-		playIcon.setVisibility(View.GONE);
-		pauseIcon.setVisibility(View.GONE);
-		placeholderIcon.setVisibility(View.INVISIBLE);
+		if(currentMediaItem == null || seekBar.getProgress() == 0) {
+			currentMediaItem = null;
+			playIcon.setVisibility(View.GONE);
+			pauseIcon.setVisibility(View.GONE);
+			placeholderIcon.setVisibility(View.INVISIBLE);	
+		}
 	}
 
 	@Override
@@ -479,23 +506,23 @@ public class MainActivity extends ActionBarActivity {
 		if (mediaRouteActionProvider != null)
 			mediaRouteActionProvider.setRouteSelector(mMediaRouteSelector);
 	
-		MenuItem refreshIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_refresh);
-		refreshIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-
-			@Override
-			public boolean onMenuItemClick(MenuItem item) {
-				resetMediaControlsOnRescan();
-				if(uPnPHandler == null) {
-					initUPnP();
-				}
-				if(uPnPHandler.getCurrentService() != null) {
-					uPnPHandler.buildContentListing(null);
-				} else {
-					listVideoFiles();
-				}				
-				return false;
-			}			
-		});
+//		MenuItem refreshIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_refresh);
+//		refreshIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+//
+//			@Override
+//			public boolean onMenuItemClick(MenuItem item) {
+//				resetMediaControlsOnRescan();
+//				if(uPnPHandler == null) {
+//					initUPnP();
+//				}
+//				if(uPnPHandler.getCurrentService() != null) {
+//					uPnPHandler.buildContentListing(null);
+//				} else {
+//					listVideoFiles();
+//				}				
+//				return false;
+//			}			
+//		});
 
 		rotateIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_rotate);
 		rotateIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {

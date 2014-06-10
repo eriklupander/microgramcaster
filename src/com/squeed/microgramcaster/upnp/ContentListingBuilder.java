@@ -203,17 +203,19 @@ public class ContentListingBuilder {
 			private boolean addThumbnailBitmap(DIDLObject item, final MediaItem mi) {
 				URI firstPropertyValue = item.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class);
 				String thumbnailUrl = firstPropertyValue != null ? firstPropertyValue.toString() : null;
-				if(thumbnailUrl != null) {
-					try{			
-						Bitmap scaledBitmap = Bitmap.createScaledBitmap(
-								BitmapFactory.decodeStream((InputStream) new URL(thumbnailUrl).getContent())
-						,96,96, true);
-						mi.setThumbnail(scaledBitmap);
-						return true;
-				    } catch (Exception e){
-				    	Log.e("ContentListingBuilder", e.getMessage());
-				    }
-				}
+				mi.setThumbnailUrl(thumbnailUrl);
+//				if(thumbnailUrl != null) {
+//					try{			
+//						Bitmap scaledBitmap = Bitmap.createScaledBitmap(
+//								BitmapFactory.decodeStream((InputStream) new URL(thumbnailUrl).getContent())
+//						,96,96, true);
+//						mi.setThumbnail(scaledBitmap);
+//						return true;
+//				    } catch (Exception e){
+//				    	Log.e("ContentListingBuilder", e.getMessage());
+//				    }
+//				}
+				
 				return false;
 			}
 		    

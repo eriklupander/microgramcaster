@@ -12,10 +12,18 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.nostra13.universalimageloader.core.ImageLoader;
 import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.util.TimeFormatter;
 
-// TODO Implement viewHolder pattern
+/**
+ * Array Adapter for showing file listings, directory browsing etc.
+ * 
+ * It's a bit bloated, mostly due to it serving both local, upnp or smb structures.
+ * 
+ * @author Erik
+ *
+ */
 public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
 
     private Context mContext;
@@ -49,15 +57,6 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         } else {
             holder = (ViewHolder) row.getTag();
         }
-    	
-
-//        if(convertView==null){
-//            // inflate the layout
-//            LayoutInflater inflater = ((Activity) mContext).getLayoutInflater();
-//            convertView = inflater.inflate(layoutResourceId, parent, false);
-//        }
-        
-        
 
         // object item based on the position
         MediaItem objectItem = data.get(position);
@@ -68,10 +67,6 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         row.setTag(R.id.dlna_url, objectItem.getData());
         row.setTag(R.id.dlna_name, objectItem.getName());
         row.setTag(R.id.dlna_duration, objectItem.getDuration());
-
-        // get the TextView and then set the text (item name) and tag (item ID) values
-        //TextView title = (TextView) convertView.findViewById(R.id.title);
-        //TextView duration = (TextView) convertView.findViewById(R.id.duration);
         
         if(!objectItem.getData().endsWith(".mp4") && objectItem.getType().equals("DLNA_ITEM")) {
         	holder.title.setPaintFlags(holder.title.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
@@ -86,18 +81,22 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         	holder.duration.setText(TimeFormatter.formatTime((int)(objectItem.getDuration() / 1000)));
         } else if(objectItem.getType().equals("DLNA_BACK")) {        	
         	holder.duration.setText("");
+        	holder.thumb.setVisibility(View.GONE);
         } else {
         	holder.duration.setText("Folder");
         }
-        
-        
-        
-        //ImageView thumb = (ImageView) convertView.findViewById(R.id.thumb);
-        if(objectItem.getThumbnail() != null) {
-        	holder.thumb.setImageBitmap(objectItem.getThumbnail());	
+
+        // Try to use UIL to load thumbnail before testing the bitmap
+        if(objectItem.getThumbnailUrl() != null) {
+        	ImageLoader.getInstance().displayImage(objectItem.getThumbnailUrl(), holder.thumb);	
         } else {
-        	holder.thumb.setImageBitmap(null);
+            if(objectItem.getThumbnail() != null) {
+            	holder.thumb.setImageBitmap(objectItem.getThumbnail());	
+            } else {
+            	holder.thumb.setImageBitmap(null);
+            }
         }
+        
         
         if(selectedPosition == position){
         	row.setBackgroundResource(R.color.pressed_color);
@@ -106,7 +105,6 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         }
        
         return row;
-
     }
     
     
@@ -123,8 +121,5 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         TextView title;
         TextView duration;
         ImageView thumb;
-        
-        
-        //int position;
     }
 }

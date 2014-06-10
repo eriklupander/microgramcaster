@@ -16,6 +16,7 @@ public class MediaItem {
 	private String lastModified;
 	private Long duration;
 	private Bitmap bitmap;
+	private String thumbnailUrl;
 	
 	// DLNA / UPNP specials  hack
 	private String type;
@@ -76,6 +77,13 @@ public class MediaItem {
 		this.externalId = externalId;
 	}
 	
+	
+	public String getThumbnailUrl() {
+		return thumbnailUrl;
+	}
+	public void setThumbnailUrl(String thumbnailUrl) {
+		this.thumbnailUrl = thumbnailUrl;
+	}
 	@Override
 	public int hashCode() {
 		final int prime = 31;
