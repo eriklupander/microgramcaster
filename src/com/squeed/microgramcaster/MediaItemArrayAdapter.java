@@ -68,7 +68,7 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         row.setTag(R.id.dlna_name, objectItem.getName());
         row.setTag(R.id.dlna_duration, objectItem.getDuration());
         
-        if(!objectItem.getData().endsWith(".mp4") && objectItem.getType().equals("DLNA_ITEM")) {
+        if(!objectItem.getData().endsWith(".mp4") && objectItem.getType().equals(Constants.DLNA_ITEM)) {
         	holder.title.setPaintFlags(holder.title.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
         } else {
         	holder.title.setPaintFlags( holder.title.getPaintFlags() & (~ Paint.STRIKE_THRU_TEXT_FLAG));
@@ -79,9 +79,8 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         
         if(objectItem.getDuration() != null) {
         	holder.duration.setText(TimeFormatter.formatTime((int)(objectItem.getDuration() / 1000)));
-        } else if(objectItem.getType().equals("DLNA_BACK")) {        	
-        	holder.duration.setText("");
-        	holder.thumb.setVisibility(View.GONE);
+        } else if(objectItem.getType().equals(Constants.DLNA_BACK)) {        	
+        	holder.duration.setText("");        	
         } else {
         	holder.duration.setText("Folder");
         }

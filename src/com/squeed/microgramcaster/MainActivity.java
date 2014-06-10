@@ -339,14 +339,14 @@ public class MainActivity extends ActionBarActivity {
 
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View listItemView, int position, long arg3) {
-				if(((String) listItemView.getTag(R.id.type)).equals("DLNA_ITEM")) {
+				if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_ITEM)) {
 					playDlnaMedia(listItemView, position);
-				} else if(((String) listItemView.getTag(R.id.type)).equals("DLNA_FOLDER")) {
+				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_FOLDER)) {
 					uPnPHandler.buildContentListing((String) listItemView.getTag(R.id.dlna_url)); // dlna_url == containerId in this case
-				} else if(((String) listItemView.getTag(R.id.type)).equals("DLNA_BACK")) {
+				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_BACK)) {
 					uPnPHandler.handleUpPressed();
 					uPnPHandler.buildContentListing((String) listItemView.getTag(R.id.dlna_url)); // dlna_url == containerId in this case
-				} else if(((String) listItemView.getTag(R.id.type)).equals("SMB_FILE")) {
+				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_FILE)) {
 					// TODO not implemented yet
 				} else {
 					playLocalMedia(mediaStoreAdapter, listItemView, position);	

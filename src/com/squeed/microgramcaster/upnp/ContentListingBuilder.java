@@ -21,6 +21,7 @@ import android.graphics.BitmapFactory;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.squeed.microgramcaster.Constants;
 import com.squeed.microgramcaster.MainActivity;
 import com.squeed.microgramcaster.R;
 import com.squeed.microgramcaster.media.MediaItem;
@@ -78,7 +79,7 @@ public class ContentListingBuilder {
 		final MediaItem mi = new MediaItem();
 		mi.setName("Back");
 		mi.setData(popParentContainerIdFromStack());			
-		mi.setType("DLNA_BACK");
+		mi.setType(Constants.DLNA_BACK);
 		// mi.setThumbnail(BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_menu_back));
 		
 		activity.runOnUiThread(new Runnable() {
@@ -127,7 +128,7 @@ public class ContentListingBuilder {
 						Long durationSeconds = TimeFormatter.hhmmssToMilliSeconds(durStr);
 						mi.setDuration(durationSeconds); // TODO FIX
 						mi.setSize(item.getFirstResource().getSize());
-						mi.setType("DLNA_ITEM");
+						mi.setType(Constants.DLNA_ITEM);
 						mi.setExternalId(item.getId());
 												
 					
@@ -172,7 +173,7 @@ public class ContentListingBuilder {
 								,96,96, true);
 								mi.setThumbnail(scaledBitmap);
 							}
-							mi.setType("DLNA_FOLDER");
+							mi.setType(Constants.DLNA_FOLDER);
 							activity.runOnUiThread(new Runnable() {
 								
 								@Override
@@ -203,20 +204,8 @@ public class ContentListingBuilder {
 			private boolean addThumbnailBitmap(DIDLObject item, final MediaItem mi) {
 				URI firstPropertyValue = item.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class);
 				String thumbnailUrl = firstPropertyValue != null ? firstPropertyValue.toString() : null;
-				mi.setThumbnailUrl(thumbnailUrl);
-//				if(thumbnailUrl != null) {
-//					try{			
-//						Bitmap scaledBitmap = Bitmap.createScaledBitmap(
-//								BitmapFactory.decodeStream((InputStream) new URL(thumbnailUrl).getContent())
-//						,96,96, true);
-//						mi.setThumbnail(scaledBitmap);
-//						return true;
-//				    } catch (Exception e){
-//				    	Log.e("ContentListingBuilder", e.getMessage());
-//				    }
-//				}
-				
-				return false;
+				mi.setThumbnailUrl(thumbnailUrl);	
+				return thumbnailUrl != null;				
 			}
 		    
 		    @Override
