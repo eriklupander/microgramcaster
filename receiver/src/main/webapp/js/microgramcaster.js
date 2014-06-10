@@ -46,7 +46,7 @@ var microgramcaster = new function() {
         var command = cmd.parse(event.data);
         switch(command.id) {
             case "CMD_PLAY_URL":
-                videoplayer.playUrl(command.params.url);
+                videoplayer.playUrl(command.params.url, command.params.title);
                 break;
             case "CMD_PLAY":
                 videoplayer.play();

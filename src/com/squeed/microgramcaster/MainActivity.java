@@ -424,7 +424,7 @@ public class MainActivity extends ActionBarActivity {
 			return;
 		}
 		preparePlayMediaItem(mi.getName(), mi.getDuration(), position);
-		Command cmd = CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName));
+		Command cmd = CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName), fileName);
 		sendMessage(cmd);		
 		currentMediaItem = new CurrentMediaItem(mi.getName(), mi.getDuration(), position, cmd);
 	}
@@ -441,7 +441,7 @@ public class MainActivity extends ActionBarActivity {
 		Long duration = (Long) listItemView.getTag(R.id.dlna_duration); 
 		preparePlayMediaItem(name, duration, position);
 		
-		Command cmd = CommandFactory.buildPlayUrlCommand(url);
+		Command cmd = CommandFactory.buildPlayUrlCommand(url, name);
 		sendMessage(cmd);	
 		currentMediaItem = new CurrentMediaItem(name, duration, position, cmd);
 	}

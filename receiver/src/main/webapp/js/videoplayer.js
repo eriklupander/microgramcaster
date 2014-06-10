@@ -4,6 +4,8 @@ var videoplayer = new function() {
 	var currentPositionRef = null;
 	var currentPositionCount = 0;
 
+    var currentlyPlayingTitle;
+
     var cancelSplash = function() {
         if(typeof showSplashHandler != 'undefined' && showSplashHandler != null) {
             window.clearInterval(showSplashHandler);
@@ -57,7 +59,12 @@ var videoplayer = new function() {
     $("video").bind("loadstart", function() {
         cancelSplash();
         var playerObject = document.getElementById('video');
-        microgramcaster.displayText('Starting to load ' + lastSegment(playerObject.currentSrc));
+        if(typeof currentlyPlayingTitle != 'undefined' && currentlyPlayingTitle != null) {
+            microgramcaster.displayText('Starting to load \'' + currentlyPlayingTitle + '\'');
+        } else {
+            microgramcaster.displayText('Starting to load ' + lastSegment(playerObject.currentSrc));
+        }
+
     });
 
     $("video").bind("seeking", function() {
@@ -94,8 +101,13 @@ var videoplayer = new function() {
         var playerObject = document.getElementById('video');
         var curr = playerObject.currentTime;
         var dur = playerObject.duration;
-        moment().format('HH:mm:ss')
-        microgramcaster.displayText('Playing \'' + lastSegment(playerObject.currentSrc) + '\' <span id="currentPosition">' + humanizeDuration(curr) + '</span> of ' + humanizeDuration(dur));
+        moment().format('HH:mm:ss');
+        if(typeof currentlyPlayingTitle != 'undefined' && currentlyPlayingTitle != null) {
+            microgramcaster.displayText('Playing \'' + currentlyPlayingTitle + '\' <span id="currentPosition">' + humanizeDuration(curr) + '</span> of ' + humanizeDuration(dur));
+        } else {
+            microgramcaster.displayText('Playing \'' + lastSegment(playerObject.currentSrc) + '\' <span id="currentPosition">' + humanizeDuration(curr) + '</span> of ' + humanizeDuration(dur));
+        }
+
 
         currentPositionCount = 0;
         currentPositionRef = setInterval(function() {
@@ -153,7 +165,21 @@ var videoplayer = new function() {
         player.pause();
     };
 
-    this.playUrl = function(url) {
+    /**
+     * Called when a new video is to be played.
+     *
+     * @param url
+     *      The actual URL to playback the video stream from.
+     * @param title
+     *      Human-readable title.
+     */
+    this.playUrl = function(url, title) {
+        if(typeof title != 'undefined' && title != null) {
+            currentlyPlayingTitle = title;
+        } else {
+            currentlyPlayingTitle = null;
+        }
+
         if($('#video').hasClass('rotate90')) {
             $('#video').removeClass('rotate90');
         }
