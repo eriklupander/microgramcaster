@@ -22,11 +22,18 @@
             android:key="docs_microgramcaster"
             android:summary="@string/docs_microgramcaster_desc"
             android:title="@string/docs_microgramcaster" />
+        <!-- 
         <Preference
             android:name="@string/ki_microgramcaster"
             android:key="ki_microgramcaster"
             android:summary="@string/ki_microgramcaster_desc"
             android:title="@string/ki_microgramcaster" />
+             -->
+        <Preference
+            android:name="@string/layout_microgramcaster"
+            android:key="layout_microgramcaster"
+            android:summary="@string/layout_microgramcaster_desc"
+            android:title="@string/layout_microgramcaster" />
     </PreferenceCategory>
 
     

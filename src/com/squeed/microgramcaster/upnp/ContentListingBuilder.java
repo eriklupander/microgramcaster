@@ -103,12 +103,10 @@ public class ContentListingBuilder {
 	}
 
 	private void buildSingleFolderSet(final Service service, final String containerId) {
-		Log.i(TAG , "Building FLAT set for containerId " + containerId);
 		Browse b = new Browse(service, containerId, BrowseFlag.DIRECT_CHILDREN) {
 
 		    @Override
 		    public void received(ActionInvocation actionInvocation, final DIDLContent didl) {
-		    	Log.i(TAG , "ENTER - received Browse callback");
 		    	boolean itemAdded = false;
 
 		    	boolean backItemAdded = false;
@@ -118,7 +116,6 @@ public class ContentListingBuilder {
 		    			backItemAdded = true;
 		    		}
 					for(Item item : didl.getItems()) {
-						Log.i(TAG , "Found item " + item.getTitle());
 						final MediaItem mi = new MediaItem();
 						mi.setName(item.getTitle());
 						mi.setData(item.getFirstResource().getValue());
@@ -135,7 +132,6 @@ public class ContentListingBuilder {
 						
 						if(preferences.getBoolean("show_unplayable", false) || mi.getData().toLowerCase().trim().endsWith("mp4")) {
 							itemAdded = true;
-							Log.i(TAG , "Found mp4 " + mi.getData());
 							addThumbnailBitmap(item, mi);
 							
 							activity.runOnUiThread(new Runnable() {
