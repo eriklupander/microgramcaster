@@ -9,10 +9,10 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:maxWidth="54dp"
-        android:maxHeight="54dp"
-        android:minWidth="54dp"
-        android:minHeight="54dp"
+        android:maxWidth="64dp"
+        android:maxHeight="64dp"
+        android:minWidth="64dp"
+        android:minHeight="64dp"
         android:contentDescription="@string/thumbnail"/>
 
     <TextView
@@ -23,7 +23,7 @@
         android:layout_marginLeft="15dp"
         android:layout_toRightOf="@+id/thumb"
         android:text="@string/title"
-        android:textSize="16dp"
+        android:textSize="18dp"
        />
 
     <TextView
@@ -33,7 +33,7 @@
         android:layout_alignLeft="@+id/title"
         android:layout_below="@+id/title"
         android:text="@string/duration"
-        android:textSize="13dp"
+        android:textSize="15dp"
          /><!--   android:textAppearance="?android:attr/textAppearanceMedium"
           android:textAppearance="?android:attr/textAppearanceSmall"  -->
 

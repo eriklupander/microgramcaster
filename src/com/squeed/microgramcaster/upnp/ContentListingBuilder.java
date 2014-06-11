@@ -44,15 +44,6 @@ public class ContentListingBuilder {
 		this.preferences = PreferenceManager.getDefaultSharedPreferences(activity);
 	}
 	
-//	public void startBuildDLNAContentListing() {
-//		//items.clear();
-//		activity.getMediaItemListAdapter().clear();
-//		activity.getMediaItemListAdapter().setSelectedPosition(-1);
-//		activity.getLoadingDialog().setMessage("Please wait while retrieving media files from UPnP source");
-//		activity.getLoadingDialog().show();
-//		//buildFlatSet(upnpHandler.getCurrentService(), "0");
-//	}
-	
 	public void buildFolderListing(String containerId) {
 		
 		//items.clear();
@@ -176,10 +167,9 @@ public class ContentListingBuilder {
 							mi.setData(item.getId());
 							boolean thumbNailAdded = addThumbnailBitmap(item, mi);
 							if(!thumbNailAdded) {
-								Bitmap scaledBitmap = Bitmap.createScaledBitmap(
-										BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_menu_archive96)
-								,96,96, true);
-								mi.setThumbnail(scaledBitmap);
+//								Bitmap scaledBitmap = Bitmap.createBitmap(
+//										);
+								mi.setThumbnail(BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_menu_archive));
 							}
 							mi.setType(Constants.DLNA_FOLDER);
 							activity.runOnUiThread(new Runnable() {
@@ -218,14 +208,14 @@ public class ContentListingBuilder {
 		    
 		    @Override
 		    public void updateStatus(Status status) {
-		    	Log.i(TAG , "ENTER - updateStatus Browse callback");
+		    	Log.d(TAG , "ENTER - updateStatus Browse callback");
 		    }
 		
 		    @Override
 		    public void failure(ActionInvocation invocation,
 		                        UpnpResponse operation,
 		                        String defaultMsg) {
-		    	Log.i(TAG , "ENTER - failure Browse callback: " + defaultMsg);
+		    	Log.e(TAG , "ENTER - failure Browse callback: " + defaultMsg);
 		    	hideLoadingDialogOnUIThread();
 		    }
 		};
@@ -250,91 +240,4 @@ public class ContentListingBuilder {
 			});						
 		}
 	}
-
-//	private void buildFlatSet(final Service service, String containerId) {
-//		Log.i(TAG , "Building FLAT set for containerId " + containerId);
-//		Browse b = new Browse(service, containerId, BrowseFlag.DIRECT_CHILDREN) {
-//
-//		    @Override
-//		    public void received(ActionInvocation actionInvocation, final DIDLContent didl) {
-//		    	if(didl.getItems() != null && didl.getItems().size() > 0) {
-//				
-//					for(Item item : didl.getItems()) {
-//						Log.i(TAG , "Found item " + item.getTitle());
-//						final MediaItem mi = new MediaItem();
-//						mi.setName(item.getTitle());
-//						mi.setData(item.getFirstResource().getValue());
-//						
-//						// At least from Windows Media Server, format is H:mm:ss.SSS
-//						String durStr = item.getFirstResource().getDuration();
-//						Long durationSeconds = parse(durStr);
-//						mi.setDuration(durationSeconds); // TODO FIX
-//						mi.setSize(item.getFirstResource().getSize());
-//						mi.setType("DLNA_ITEM");
-//						mi.setExternalId(item.getId());
-//												
-//						if(!items.contains(mi)) {
-//							items.add(mi);
-//							
-//							// For now, only add mp4 files.
-//							if(mi.getData().toLowerCase().trim().endsWith("mp4")) {
-//								Log.i(TAG , "Found mp4 " + mi.getData());
-//								String thumbnailUrl = item.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class).toString();
-//								if(thumbnailUrl != null) {
-//									try{			
-//										Bitmap scaledBitmap = Bitmap.createScaledBitmap(
-//												BitmapFactory.decodeStream((InputStream) new URL(thumbnailUrl).getContent())
-//										,96,96, true);
-//										mi.setThumbnail(scaledBitmap);
-//							        } catch (Exception e){
-//							        	Log.e("ContentListingBuilder", e.getMessage());
-//							        }
-//								}
-//								activity.runOnUiThread(new Runnable() {
-//									
-//									@Override
-//									public void run() {										
-//										activity.getMediaItemListAdapter().add(mi);
-//										activity.getMediaItemListAdapter().sort(mediaItemComparator);
-//										activity.getMediaItemListAdapter().notifyDataSetChanged();
-//										if(activity.getLoadingDialog().isShowing()) {
-//											activity.getLoadingDialog().hide();
-//										}
-//									}
-//								});
-//							}							
-//						}
-//					}
-//				}
-//		    	if(didl.getContainers() != null && didl.getContainers().size() > 0){
-//			
-//					for(Container item : didl.getContainers()) {
-//						if(item.getChildCount() > 0) {
-//							buildFlatSet(service, item.getId());	
-//						}						
-//					}
-//				}
-//		    }
-//		    
-//		    @Override
-//		    public void updateStatus(Status status) {
-//		        
-//		    }
-//		
-//		    @Override
-//		    public void failure(ActionInvocation invocation,
-//		                        UpnpResponse operation,
-//		                        String defaultMsg) {
-//		    }
-//		};
-//		upnpHandler.getUPnPService().getControlPoint().execute(b);
-//	}
-
-
-	// TODO Move to util class...
-	
-
-
-
-	
 }

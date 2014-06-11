@@ -131,7 +131,7 @@ public class MainActivity extends ActionBarActivity {
 		DisplayImageOptions defaultOptions = new DisplayImageOptions.Builder()
 			.cacheInMemory(true)
 			.cacheOnDisk(true)
-			.imageScaleType(ImageScaleType.EXACTLY) 
+			.imageScaleType(ImageScaleType.EXACTLY_STRETCHED) 
 			.build();
 		
 		ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
