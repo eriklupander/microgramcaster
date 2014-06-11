@@ -49,7 +49,7 @@ public class UPnPHandler {
 
 	        public void onServiceConnected(ComponentName className, IBinder service) {
 	            upnpService = (AndroidUpnpService) service;
-
+	            
 	            // Clear the list
 	           // listAdapter.clear();
 
@@ -80,15 +80,15 @@ public class UPnPHandler {
 
 
 			/* Discovery performance optimization for very slow Android devices! */
-//	        @Override
-//	        public void remoteDeviceDiscoveryStarted(Registry registry, RemoteDevice device) {
-//	            deviceAdded(device);
-//	        }
-//
-//	        @Override
-//	        public void remoteDeviceDiscoveryFailed(Registry registry, final RemoteDevice device, final Exception ex) {
-//	            deviceRemoved(device);
-//	        }
+	        @Override
+	        public void remoteDeviceDiscoveryStarted(Registry registry, RemoteDevice device) {
+	            deviceAdded(device);
+	        }
+
+	        @Override
+	        public void remoteDeviceDiscoveryFailed(Registry registry, final RemoteDevice device, final Exception ex) {
+	            deviceRemoved(device);
+	        }
 	        /* End of optimization, you can remove the whole block if your Android handset is fast (>= 600 Mhz) */
 
 	        @Override
@@ -155,7 +155,8 @@ public class UPnPHandler {
 	    public void destroyUPnpService() {
 	    	
 	    	if (upnpService != null) {
-	    		upnpService.getRegistry().removeListener(registryListener);	    		
+	    		upnpService.getRegistry().removeListener(registryListener);
+	    		upnpService.getConfiguration().shutdown();
 	    	}
 	        // This will stop the UPnP service if nobody else is bound to it
 	    	activity.getApplicationContext().unbindService(serviceConnection);	    	

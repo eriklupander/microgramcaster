@@ -59,8 +59,16 @@ public class ContentListingBuilder {
 		activity.getMediaItemListAdapter().clear();
 		activity.getMediaItemListAdapter().setSelectedPosition(-1);
 		
-		activity.getLoadingDialog().setMessage("Please wait while retrieving media files from UPnP source");
-		activity.getLoadingDialog().show();
+		activity.runOnUiThread(new Runnable() {
+
+			@Override
+			public void run() {
+				activity.getMediaItemListAdapter().notifyDataSetChanged();
+				activity.getLoadingDialog().setMessage("Please wait while retrieving media files from UPnP source");
+				activity.getLoadingDialog().show();
+			}			
+		});
+		
 		
 		
 		
@@ -77,10 +85,10 @@ public class ContentListingBuilder {
 
 	private void addBackItem() {
 		final MediaItem mi = new MediaItem();
-		mi.setName("Back");
+		mi.setName("");
 		mi.setData(popParentContainerIdFromStack());			
 		mi.setType(Constants.DLNA_BACK);
-		// mi.setThumbnail(BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_menu_back));
+		mi.setThumbnail(BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_menu_back));
 		
 		activity.runOnUiThread(new Runnable() {
 			

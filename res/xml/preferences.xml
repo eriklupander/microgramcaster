@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     android:title="@string/settings" >
-
+    
     <PreferenceCategory android:title="@string/preferencesHeading" >
         <CheckBoxPreference
             android:name="@string/show_unplayable"
@@ -10,5 +10,25 @@
             android:summary="@string/show_unplayable_desc"
             android:title="@string/show_unplayable" />
     </PreferenceCategory>
+    
+    <PreferenceCategory android:title="@string/about" >
+        <Preference
+            android:name="@string/about_microgramcaster"
+            android:key="about_microgramcaster"
+            android:summary="@string/about_microgramcaster_desc"
+            android:title="@string/about_microgramcaster" />
+        <Preference
+            android:name="@string/docs_microgramcaster"
+            android:key="docs_microgramcaster"
+            android:summary="@string/docs_microgramcaster_desc"
+            android:title="@string/docs_microgramcaster" />
+        <Preference
+            android:name="@string/ki_microgramcaster"
+            android:key="ki_microgramcaster"
+            android:summary="@string/ki_microgramcaster_desc"
+            android:title="@string/ki_microgramcaster" />
+    </PreferenceCategory>
+
+    
 
 </PreferenceScreen>

@@ -113,6 +113,7 @@ public class MainActivity extends ActionBarActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(com.squeed.microgramcaster.R.layout.activity_main);
+		setTitle("");
 		initImageLoader();
 		initDialogs();
 		startWebServer();
@@ -231,14 +232,24 @@ public class MainActivity extends ActionBarActivity {
 			// End media router discovery
 			mMediaRouter.removeCallback(mMediaRouterCallback);
 		}
+		dialog.dismiss();
+		loadingDialog.dismiss();
 		super.onPause();
 	}
 
 	@Override
 	public void onDestroy() {
-		if(uPnPHandler != null)
-			uPnPHandler.destroyUPnpService();
+		
 		teardown();
+		
+		if(uPnPHandler != null) {
+			uPnPHandler.destroyUPnpService();
+		}
+			
+		
+		dialog.dismiss();
+		loadingDialog.dismiss();
+		
 		super.onDestroy();
 		
 	}
@@ -321,7 +332,7 @@ public class MainActivity extends ActionBarActivity {
 
 	private void resetToLandscape() {
 		landscape = true;
-		rotateIcon.setIcon(R.drawable.ic_menu_always_landscape_portrait);
+		rotateIcon.setIcon(R.drawable.ic_action_screen_rotation);
 	}
 
 	public void onRequestedPosition(int positionSeconds) {
@@ -431,7 +442,7 @@ public class MainActivity extends ActionBarActivity {
 	
 	private void playDlnaMedia(View listItemView, int position) {
 		String url = (String) listItemView.getTag(R.id.dlna_url);
-		if(!url.endsWith(".mp4")) {
+		if(!(url.endsWith(".mp4")  || url.endsWith(".ogv"))) {
 			dialog.setMessage("The Chromecast cannot play " + url.substring(url.lastIndexOf(".")) + " files, you'll have to convert this file to .mp4");
 			dialog.show();
 			return;
@@ -532,9 +543,9 @@ public class MainActivity extends ActionBarActivity {
 				sendMessage(CommandFactory.buildToggleRotateCommand());
 				landscape = !landscape;
 				if(landscape ) {
-					rotateIcon.setIcon(R.drawable.ic_menu_always_landscape_portrait);
+					rotateIcon.setIcon(R.drawable.ic_action_screen_rotation);
 				} else {
-					rotateIcon.setIcon(R.drawable.ic_menu_always_landscape_portrait_blue);
+					rotateIcon.setIcon(R.drawable.ic_action_screen_rotation_blue);
 				}
 				return false;
 			}
@@ -710,15 +721,10 @@ public class MainActivity extends ActionBarActivity {
 										Status status = result.getStatus();
 										
 										if (status.isSuccess()) {
-//											ApplicationMetadata applicationMetadata = result.getApplicationMetadata();
-//											String sessionId = result.getSessionId();
-//											String applicationStatus = result.getApplicationStatus();
-//											boolean wasLaunched = result.getWasLaunched();
 //											
 											mApplicationStarted = true;
 
-											// Create the custom message
-											// channel
+											// Create the custom message channel
 											mMicrogramCasterChannel = new MicrogramCasterChannel(MainActivity.this);
 											try {
 												Cast.CastApi.setMessageReceivedCallbacks(mApiClient,

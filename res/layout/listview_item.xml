@@ -9,12 +9,11 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:maxWidth="96px"
-        android:maxHeight="96px"
-        android:minWidth="96px"
-        android:minHeight="96px"
-        android:contentDescription="@string/thumbnail"
-        android:src="@drawable/placeholder" />
+        android:maxWidth="54dp"
+        android:maxHeight="54dp"
+        android:minWidth="54dp"
+        android:minHeight="54dp"
+        android:contentDescription="@string/thumbnail"/>
 
     <TextView
         android:id="@+id/title"

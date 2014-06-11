@@ -35,24 +35,26 @@ app:showAsAction="always"
         android:icon="@drawable/ic_media_pause"
         app:showAsAction="ifRoom" />  
      -->   
-    <item
-        android:id="@+id/action_rotate"
-        android:title="@string/rotate"
-        android:icon="@drawable/ic_menu_always_landscape_portrait"
-        app:showAsAction="ifRoom" />
+    
       <!--  
      <item
         android:id="@+id/action_refresh"
         android:title="@string/refresh"
-        android:icon="@drawable/ic_menu_refresh"
+        android:icon="@drawable/ic_action_refresh"
         app:showAsAction="ifRoom" />
          -->
      
      <item
         android:id="@+id/action_search_upnp"
         android:title="@string/upnp_search"
-        android:icon="@drawable/ic_menu_archive"
-        app:showAsAction="ifRoom" />
+        android:icon="@drawable/ic_action_storage"
+        app:showAsAction="always" />
+     
+     <item
+        android:id="@+id/action_rotate"
+        android:title="@string/rotate"
+        android:icon="@drawable/ic_action_screen_rotation"
+        app:showAsAction="always" />
      
      <!-- 
       <item
@@ -65,7 +67,7 @@ app:showAsAction="always"
 	  <item
         android:id="@+id/action_settings"
         android:title="@string/settings"
-        android:icon="@drawable/ic_menu_settings_holo_light"
+        android:icon="@drawable/ic_action_settings"
         app:showAsAction="ifRoom" />     
         
      <item
