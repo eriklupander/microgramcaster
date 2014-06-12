@@ -131,7 +131,7 @@ public abstract class NanoHTTPD {
         setAsyncRunner(new DefaultAsyncRunner());
     }
 
-    private static final void safeClose(Closeable closeable) {
+    public static final void safeClose(Closeable closeable) {
         if (closeable != null) {
             try {
                 closeable.close();
@@ -549,27 +549,27 @@ public abstract class NanoHTTPD {
         /**
          * HTTP status code after processing, e.g. "200 OK", HTTP_OK
          */
-        private Status status;
+        protected Status status;
         /**
          * MIME type of content, e.g. "text/html"
          */
-        private String mimeType;
+        protected String mimeType;
         /**
          * Data of the response, may be null.
          */
-        private InputStream data;
+        protected InputStream data;
         /**
          * Headers for the HTTP response. Use addHeader() to add lines.
          */
-        private Map<String, String> header = new HashMap<String, String>();
+        protected Map<String, String> header = new HashMap<String, String>();
         /**
          * The request method that spawned this response.
          */
-        private Method requestMethod;
+        protected Method requestMethod;
         /**
          * Use chunkedTransfer
          */
-        private boolean chunkedTransfer;
+        protected boolean chunkedTransfer;
 
         /**
          * Default constructor: response = HTTP_OK, mime = MIME_HTML and your supplied message
@@ -667,7 +667,7 @@ public abstract class NanoHTTPD {
             outputStream.write(String.format("0\r\n\r\n").getBytes());
         }
 
-        private void sendAsFixedLength(OutputStream outputStream, PrintWriter pw) throws IOException {
+        protected void sendAsFixedLength(OutputStream outputStream, PrintWriter pw) throws IOException {
             int pending = data != null ? data.available() : 0; // This is to support partial sends, see serveFile()
             pw.print("Content-Length: "+pending+"\r\n");
 

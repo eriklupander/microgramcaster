@@ -2,6 +2,8 @@ package com.squeed.microgramcaster;
 
 import java.util.ArrayList;
 
+import org.apache.commons.io.FileUtils;
+
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Paint;
@@ -78,7 +80,13 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         
         
         if(objectItem.getDuration() != null) {
-        	holder.duration.setText(TimeFormatter.formatTime((int)(objectItem.getDuration() / 1000)));
+        	if(!objectItem.getType().equals(Constants.SMB_FILE)) {
+        		holder.duration.setText(TimeFormatter.formatTime((int)(objectItem.getDuration() / 1000)));	
+        	} else {
+        		//holder.duration.setText(ByteFormatter.humanReadableByteCount(objectItem.getDuration(), false));
+        		holder.duration.setText(FileUtils.byteCountToDisplaySize(objectItem.getDuration()));
+        	}
+        	
         } else if(objectItem.getType().equals(Constants.DLNA_BACK)) {        	
         	holder.duration.setText("");        	
         } else {

@@ -1,7 +1,10 @@
 package com.squeed.microgramcaster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
+
+import jcifs.smb.SmbFile;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -52,6 +55,9 @@ import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaStoreAdapter;
 import com.squeed.microgramcaster.server.MyHTTPD;
 import com.squeed.microgramcaster.server.WebServerService;
+import com.squeed.microgramcaster.smb.SambaExplorer;
+import com.squeed.microgramcaster.smb.SmbReadFolderTask;
+import com.squeed.microgramcaster.smb.SmbScannerTask;
 import com.squeed.microgramcaster.upnp.UPnPHandler;
 import com.squeed.microgramcaster.util.TimeFormatter;
 import com.squeed.microgramcaster.util.WifiHelper;
@@ -108,6 +114,9 @@ public class MainActivity extends ActionBarActivity {
 	
 	private SharedPreferences preferences;
 	
+	
+	private SambaExplorer sambaExplorer;
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -145,7 +154,9 @@ public class MainActivity extends ActionBarActivity {
 
 	private void initUPnP() {
 		uPnPHandler = new UPnPHandler(this);
-		uPnPHandler.initUPnpService();		
+		uPnPHandler.initUPnpService();	
+		
+		sambaExplorer = new SambaExplorer(this);
 	}
 
 
@@ -358,7 +369,23 @@ public class MainActivity extends ActionBarActivity {
 					uPnPHandler.handleUpPressed();
 					uPnPHandler.buildContentListing((String) listItemView.getTag(R.id.dlna_url)); // dlna_url == containerId in this case
 				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_FILE)) {
-					// TODO not implemented yet
+					
+					
+					playSmbMedia(listItemView, position);
+					
+				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_FOLDER)) {
+					String folder = (String) listItemView.getTag(R.id.dlna_url);
+					
+						MainActivity.this.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								adapter.clear();
+								adapter.notifyDataSetChanged();
+							}							
+						});
+						
+						new SmbReadFolderTask(MainActivity.this).execute(folder);						
+					
 				} else {
 					playLocalMedia(mediaStoreAdapter, listItemView, position);	
 				}				
@@ -386,6 +413,47 @@ public class MainActivity extends ActionBarActivity {
 		}		
 	}
 	
+	/**
+	 * The provided URL might be something like
+	 * 
+	 *  smb://STREAMWOLF2/StreamWolfShare/TV-serier/GoT/Game.of.Thrones.S04E05.HDTV.x264-nesmeured.mp4
+	 *  
+	 *  which of course won't be playable directly for the Chromecast, we need our local http server to act
+	 *  as proxy to the SMB share.
+	 *  
+	 *  Construct a URL that can be served with an alternate codepath:
+	 *  
+	 *  http://{ip.to.device]:[port]/smb/STREAMWOLF2/StreamWolfShare/TV-serier/GoT/Game.of.Thrones.S04E05.HDTV.x264-nesmeured.mp4
+	 *  
+	 *  
+	 *  
+	 * @param listItemView
+	 * @param position
+	 */
+	private void playSmbMedia(View listItemView, int position) {
+		String url = (String) listItemView.getTag(R.id.dlna_url);
+		if(!(url.endsWith(".mp4")  || url.endsWith(".ogv"))) {
+			dialog.setMessage("The Chromecast cannot play " + url.substring(url.lastIndexOf(".")) + " files, you'll have to convert this file to .mp4");
+			dialog.show();
+			return;
+		}
+		
+		String name = (String) listItemView.getTag(R.id.dlna_name);
+		Long duration = (Long) listItemView.getTag(R.id.dlna_duration); // We may need to read the duration using isofileparser?
+		
+		
+		preparePlayMediaItem(name, duration != null ? duration : 1000L, position);
+		
+		String finalUrl = buildSmbItemURL(url);
+		Log.i(TAG, "Built SMB proxy URL: " + finalUrl);
+		
+		Command cmd = CommandFactory.buildPlayUrlCommand(finalUrl, name);
+		sendMessage(cmd);	
+		currentMediaItem = new CurrentMediaItem(name, duration, position, cmd);
+	}
+
+
+
 	private void preparePlayMediaItem(String name, Long durationMs, int position) {
 		if (mSelectedDevice == null || !mApiClient.isConnected()) {
 			Toast.makeText(MainActivity.this, "No cast device selected", Toast.LENGTH_SHORT).show();
@@ -796,6 +864,12 @@ public class MainActivity extends ActionBarActivity {
 		return MyHTTPD.WEB_SERVER_PROTOCOL + "://" + WifiHelper.getLanIP(MainActivity.this) + ":"
 				+ MyHTTPD.WEB_SERVER_PORT + "/" + fileName;
 	}
+	
+	private String buildSmbItemURL(String smbPath) {
+		String finalSmbPath = smbPath.substring(smbPath.toLowerCase().indexOf("smb://")+6);
+		return MyHTTPD.WEB_SERVER_PROTOCOL + "://" + WifiHelper.getLanIP(MainActivity.this) + ":"
+				+ MyHTTPD.WEB_SERVER_PORT + "/smb/" + finalSmbPath;
+	}
 
 	
 
@@ -855,6 +929,8 @@ public class MainActivity extends ActionBarActivity {
 			}			
 		}
 	};
+
+	
 	
 	@Override
 	public void onBackPressed() {
@@ -879,6 +955,12 @@ public class MainActivity extends ActionBarActivity {
 
 	public ProgressDialog getLoadingDialog() {
 		return loadingDialog;
+	}
+
+
+
+	public SambaExplorer getSambaExplorer() {
+		return sambaExplorer;
 	}
 	
 }

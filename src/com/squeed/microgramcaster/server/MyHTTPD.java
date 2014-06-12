@@ -1,14 +1,23 @@
 package com.squeed.microgramcaster.server;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.io.IOUtils;
+
+import jcifs.smb.SmbFile;
+import jcifs.smb.SmbFileInputStream;
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 
 import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaStoreAdapter;
@@ -30,6 +39,8 @@ import fi.iki.elonen.NanoHTTPD;
  *
  */
 public class MyHTTPD extends NanoHTTPD {
+	
+	private static final String TAG = "MyHTTPD";
 	
 	public static final String WEB_SERVER_PROTOCOL = "http";
 	public static final Integer WEB_SERVER_PORT = 8282;
@@ -56,6 +67,7 @@ public class MyHTTPD extends NanoHTTPD {
         put("mp4", "video/mp4");
         put("ogv", "video/ogg");
     }};
+	
 	
     
     public MyHTTPD(String hostName, int port, Context ctx, MediaStoreAdapter mediaStoreAdapter) {
@@ -91,26 +103,114 @@ public class MyHTTPD extends NanoHTTPD {
             return createResponse(Response.Status.FORBIDDEN, NanoHTTPD.MIME_PLAINTEXT, "FORBIDDEN: Won't serve ../ for security reasons.");
         }
 
-        if(requestedFile.startsWith("/")) {
-        	requestedFile = requestedFile.substring(1);
-        }
-        final MediaItem mediaItem = mediaStoreAdapter.findFile(ctx, requestedFile);		
-        if(mediaItem == null) {
-        	return createResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "NOT_FOUND: " + requestedFile);
-        }
-		final InputStream is = ctx.getContentResolver().openInputStream(Uri.parse("file:" + mediaItem.getData()));
-       
+        if(requestedFile.startsWith("/smb/")) {
+        	// Serve media from SMB share, this could be complicated...
+        	String smbFileUrl = "smb://" + requestedFile.substring(5);
+        	SmbFile smbFile = new SmbFile(smbFileUrl);
+//       	InputStream is = smbFile.getInputStream();
+//        	
+//        	// For now HUGE hack, read the entire file before starting to serve...
+//        	byte[] buffer = new byte[smbFile.getContentLength()];
+//        	int bytesRead = IOUtils.read(is, buffer);
+//        	Log.i(TAG, "Read total bytes into buffer: " + bytesRead);
+//        	
+        	
+        	InputStream copyStream = new BufferedInputStream(new SmbFileInputStream(smbFile));	
+        	
+        	Response response = serveSmbFile(smbFileUrl, headers, copyStream, smbFile, getMimeTypeForFile(uri));
+        	return response != null ? response :
+                createResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Error 404, file not found.");
+        } 
+        
+        else {
+        	// Serve local media
+        	 if(requestedFile.startsWith("/")) {
+             	requestedFile = requestedFile.substring(1);
+             }
+             
+             final MediaItem mediaItem = mediaStoreAdapter.findFile(ctx, requestedFile);		
+             if(mediaItem == null) {
+             	return createResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "NOT_FOUND: " + requestedFile);
+             }
+     		final InputStream is = ctx.getContentResolver().openInputStream(Uri.parse("file:" + mediaItem.getData()));
+            
 
-        String mimeTypeForFile = getMimeTypeForFile(uri);
-      
-        Response response = serveFile(uri, headers, mediaItem, is, mimeTypeForFile);
-     
-        return response != null ? response :
-            createResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Error 404, file not found.");
+             String mimeTypeForFile = getMimeTypeForFile(uri);
+           
+             Response response = serveFile(uri, headers, mediaItem, is, mimeTypeForFile);
+          
+             return response != null ? response :
+                 createResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Error 404, file not found.");
+        }
+        
+       
     }
 
     
-    // Get MIME type from file name extension, if possible
+    private Response serveSmbFile(String smbFileUrl, Map<String, String> header, InputStream is, SmbFile smbFile, String mime) {
+    	Response res;
+        try {
+            // Calculate etag
+            String etag = Integer.toHexString((smbFile.getName() + smbFile.getLastModified() + "" + smbFile.getContentLength()).hashCode());
+
+            // Support (simple) skipping:
+            long startFrom = 0;
+            long endAt = -1;
+            String range = header.get("range");
+            if (range != null) {
+                if (range.startsWith("bytes=")) {
+                    range = range.substring("bytes=".length());
+                    int minus = range.indexOf('-');
+                    try {
+                        if (minus > 0) {
+                            startFrom = Long.parseLong(range.substring(0, minus));
+                            endAt = Long.parseLong(range.substring(minus + 1));
+                        }
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+
+            // Change return code and add Content-Range header when skipping is requested
+            long fileLen = smbFile.getContentLength();
+            if (range != null && startFrom >= 0) {
+                if (startFrom >= fileLen) {
+                    res = createResponse(Response.Status.RANGE_NOT_SATISFIABLE, NanoHTTPD.MIME_PLAINTEXT, "");
+                    res.addHeader("Content-Range", "bytes 0-0/" + fileLen);
+                    res.addHeader("ETag", etag);
+                } else {
+                    if (endAt < 0) {
+                        endAt = fileLen - 1;
+                    }
+                    long newLen = endAt - startFrom + 1;
+                    if (newLen < 0) {
+                        newLen = 0;
+                    }
+
+                    final long dataLen = newLen;//                  
+                    is.skip(startFrom);
+
+                    res = createNonBufferedResponse(Response.Status.PARTIAL_CONTENT, mime, is, fileLen);
+                    res.addHeader("Content-Range", "bytes " + startFrom + "-" + endAt + "/" + fileLen);
+                    res.addHeader("ETag", etag);
+                }
+            } else {
+                if (etag.equals(header.get("if-none-match")))
+                    res = createResponse(Response.Status.NOT_MODIFIED, mime, "");
+                else {
+                    res = createNonBufferedResponse(Response.Status.OK, mime, is, fileLen);
+                    res.addHeader("ETag", etag);
+                }
+            }
+        } catch (IOException ioe) {
+            res = createResponse(Response.Status.FORBIDDEN, NanoHTTPD.MIME_PLAINTEXT, "FORBIDDEN: Reading file failed.");
+        }
+
+        return res;
+	}
+
+
+	// Get MIME type from file name extension, if possible
     private String getMimeTypeForFile(String uri) {
         int dot = uri.lastIndexOf('.');
         String mime = null;
@@ -195,6 +295,13 @@ public class MyHTTPD extends NanoHTTPD {
     // Announce that the file server accepts partial content requests
     private Response createResponse(Response.Status status, String mimeType, String message) {
         Response res = new Response(status, mimeType, message);
+        res.addHeader("Accept-Ranges", "bytes");
+        return res;
+    }
+    
+ // Announce that the file server accepts partial content requests
+    private Response createNonBufferedResponse(Response.Status status, String mimeType, InputStream message, Long len) {
+        Response res = new NonBufferedResponse(status, mimeType, message, len);
         res.addHeader("Accept-Ranges", "bytes");
         return res;
     }

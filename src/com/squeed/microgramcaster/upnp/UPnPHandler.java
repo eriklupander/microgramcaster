@@ -1,6 +1,7 @@
 package com.squeed.microgramcaster.upnp;
 
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.model.meta.Device;
@@ -30,6 +31,7 @@ import android.widget.TextView;
 
 import com.squeed.microgramcaster.MainActivity;
 import com.squeed.microgramcaster.R;
+import com.squeed.microgramcaster.smb.SmbScannerTask;
 
 
 public class UPnPHandler {
@@ -238,6 +240,40 @@ public class UPnPHandler {
 	    	layout.addView(localText);
 	    	layout.addView(underText);
 	    	layout.addView(upnpDeviceList);
+	    	
+	    	// END UPNP LISTING
+	    	
+	    	// START SMB
+	    	TextView smbText = new TextView(activity);
+	    	smbText.setPadding(4, 4, 4, 0);
+	    	smbText.setTextSize(16);
+	    	smbText.setTypeface(null, Typeface.BOLD);
+	    	smbText.setText("SMB Network share");
+	    	OnClickListener clSmb = new OnClickListener() {
+				
+				@Override
+				public void onClick(View v) {
+					activity.runOnUiThread(new Runnable() {
+
+						@Override
+						public void run() {
+							activity.getMediaItemListAdapter().clear();
+							activity.getMediaItemListAdapter().notifyDataSetChanged();
+							upnpDeviceDialog.hide();
+						}
+					});
+					new SmbScannerTask(activity).execute();
+				}
+			};
+			smbText.setOnClickListener(clSmb);
+	    	TextView smbUnderText = new TextView(activity);
+	    	smbUnderText.setPadding(4, 0, 4, 0);
+	    	smbUnderText.setTextSize(14);
+	    	smbUnderText.setText("Browse SMB shares on your local network");
+	    	smbUnderText.setOnClickListener(clSmb);
+	    	
+	    	layout.addView(smbText);
+	    	layout.addView(smbUnderText);
 	    	
 	    	builder.setView(layout);
 	    	upnpDeviceDialog = builder.create();

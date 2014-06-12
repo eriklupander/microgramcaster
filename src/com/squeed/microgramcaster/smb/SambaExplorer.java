@@ -1,27 +1,22 @@
 package com.squeed.microgramcaster.smb;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.util.Comparator;
 
 import jcifs.smb.SmbAuthException;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.DhcpInfo;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.util.Log;
-import android.view.Window;
-import android.widget.Toast;
 
+import com.squeed.microgramcaster.Constants;
 import com.squeed.microgramcaster.MainActivity;
+import com.squeed.microgramcaster.R;
 import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaItemComparator;
 
@@ -201,24 +196,12 @@ public class SambaExplorer {
 
 			SmbFile f;
 			try {
-
-				//if (DownloadService.userAuth != null) {
-				//	f = new SmbFile(mHost, DownloadService.userAuth);
-				//} else {
-					f = new SmbFile(mHost);
-				//}
-					mainActivity.runOnUiThread(new Runnable() {
-
-						@Override
-						public void run() {
-							mainActivity.getMediaItemListAdapter().clear();
-						}
-						
-					});
+				f = new SmbFile(mHost);
+				
 					
 				if (f.canRead()) {
 
-					traverseSMB(f, 6);
+					traverseSMB(f, 2);
 
 				}
 			} catch (SmbAuthException e) {
@@ -413,11 +396,12 @@ public class SambaExplorer {
 	
 	private MediaItemComparator comparator = new MediaItemComparator();
 
-	void traverseSMB(SmbFile f, int depth) throws MalformedURLException, IOException {
+	public void traverseSMB(SmbFile f, int depth) throws MalformedURLException, IOException {
 
 		if (depth == 0) {
 			return;
 		}
+		
 		try {
 			SmbFile[] l;
 
@@ -425,21 +409,43 @@ public class SambaExplorer {
 
 			for (int i = 0; l != null && i < l.length; i++) {
 				try {
-
-					//addListItem(l[i].getCanonicalPath());// .getDfsPath() );
 					if (l[i].isDirectory()) {
-						traverseSMB(l[i], depth - 1);
+	
+						String path = l[i].getCanonicalPath();
+						String name = null;
+						if(path.endsWith("/")) {
+							String tmpPath = path.substring(0, path.length() - 1);
+							name = tmpPath.substring(tmpPath.lastIndexOf("/")+1);
+						} else {
+							name = path.substring(path.lastIndexOf("/")+1);
+						}
+						final MediaItem mi = new MediaItem();
+						mi.setType(Constants.SMB_FOLDER);
+						mi.setData(path);
+						mi.setName(name);
+						mi.setDuration(null);
+						mi.setThumbnail(BitmapFactory.decodeResource(mainActivity.getResources(), R.drawable.ic_menu_archive));
+				
+						mainActivity.runOnUiThread(new Runnable() {
+
+							@Override
+							public void run() {
+								mainActivity.getMediaItemListAdapter().add(mi);
+								mainActivity.getMediaItemListAdapter().sort(comparator);
+								mainActivity.getMediaItemListAdapter().notifyDataSetChanged();
+							}
+							
+						});
 					} else {
 						if(l[i].getCanonicalPath().toLowerCase().endsWith("mp4")) {
 
 							final MediaItem mi = new MediaItem();
-							mi.setType("SMB_FILE");
+							mi.setType(Constants.SMB_FILE);
 							mi.setData(l[i].getCanonicalPath());
 							mi.setName(l[i].getCanonicalPath().substring(l[i].getCanonicalPath().lastIndexOf("/")+1));
-							mi.setDuration(-1L);
+							mi.setDuration((long) l[i].getContentLength());
+							
 							mainActivity.runOnUiThread(new Runnable() {
-
-								
 
 								@Override
 								public void run() {
@@ -449,10 +455,7 @@ public class SambaExplorer {
 								}
 								
 							});
-							
-							
 						}
-						
 					}
 
 				} catch (SmbAuthException e) {

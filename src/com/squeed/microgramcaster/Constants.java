@@ -5,4 +5,5 @@ public interface Constants {
 	String DLNA_BACK = "DLNA_BACK";
 	String DLNA_FOLDER = "DLNA_FOLDER";
 	String SMB_FILE = "SMB_FILE";
+	String SMB_FOLDER = "SMB_FOLDER";
 }
