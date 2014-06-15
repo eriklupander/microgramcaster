@@ -1,10 +1,7 @@
 package com.squeed.microgramcaster;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
-
-import jcifs.smb.SmbFile;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,10 +11,13 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.MediaRouteActionProvider;
 import android.support.v7.media.MediaRouteSelector;
@@ -51,6 +51,9 @@ import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.squeed.microgramcaster.channel.Command;
 import com.squeed.microgramcaster.channel.CommandFactory;
 import com.squeed.microgramcaster.channel.MicrogramCasterChannel;
+import com.squeed.microgramcaster.drawer.DrawerItem;
+import com.squeed.microgramcaster.drawer.DrawerItemArrayAdapter;
+import com.squeed.microgramcaster.drawer.DrawerItemFactory;
 import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaStoreAdapter;
 import com.squeed.microgramcaster.server.MyHTTPD;
@@ -58,6 +61,8 @@ import com.squeed.microgramcaster.server.WebServerService;
 import com.squeed.microgramcaster.smb.SambaExplorer;
 import com.squeed.microgramcaster.smb.SmbReadFolderTask;
 import com.squeed.microgramcaster.smb.SmbScannerTask;
+import com.squeed.microgramcaster.source.NetworkSourceArrayAdapter;
+import com.squeed.microgramcaster.source.NetworkSourceDialogBuilder;
 import com.squeed.microgramcaster.upnp.UPnPHandler;
 import com.squeed.microgramcaster.util.TimeFormatter;
 import com.squeed.microgramcaster.util.WifiHelper;
@@ -116,6 +121,16 @@ public class MainActivity extends ActionBarActivity {
 	
 	
 	private SambaExplorer sambaExplorer;
+	
+	// Side-drawer stuff
+
+    private DrawerLayout drawerLayout;
+    private ListView drawerList;
+    
+    private NetworkSourceDialogBuilder bldr;
+
+	private ActionBarDrawerToggle mDrawerToggle;
+
 
 
 	@Override
@@ -123,8 +138,11 @@ public class MainActivity extends ActionBarActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(com.squeed.microgramcaster.R.layout.activity_main);
 		setTitle("");
+		
 		initImageLoader();
 		initDialogs();
+		initSourceDialogAndUPnP();
+		initDrawer();
 		startWebServer();
 		initMediaRouter();
 		listVideoFiles();
@@ -134,6 +152,82 @@ public class MainActivity extends ActionBarActivity {
 	}
 
 	
+
+	private void initDrawer() {		
+		
+		//categories = getResources().getStringArray(R.array.src_categories);
+		drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+		mDrawerToggle = new ActionBarDrawerToggle(
+                this,                  /* host Activity */
+                drawerLayout,         /* DrawerLayout object */
+                R.drawable.ic_navigation_drawer,  /* nav drawer icon to replace 'Up' caret */
+                R.string.drawer_open,  /* "open drawer" description */
+                R.string.drawer_close  /* "close drawer" description */
+                ) {
+
+            /** Called when a drawer has settled in a completely closed state. */
+            public void onDrawerClosed(View view) {
+                super.onDrawerClosed(view);
+                getActionBar().setTitle("");
+            }
+
+            /** Called when a drawer has settled in a completely open state. */
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+                getActionBar().setTitle("");
+            }
+        };
+
+        // Set the drawer toggle as the DrawerListener
+        drawerLayout.setDrawerListener(mDrawerToggle);
+		drawerList = (ListView) findViewById(R.id.left_drawer);
+		drawerList.setAdapter(new DrawerItemArrayAdapter(this,
+                R.layout.navigation_drawer_item, (ArrayList<DrawerItem>) DrawerItemFactory.buildDrawerItems(this)));
+        // Set the list's click listener
+		drawerList.setOnItemClickListener(new OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
+				resetMediaControlsOnRescan();
+				
+				switch(position) {
+				case 0:
+					// LOCAL					
+					listVideoFiles();
+					break;
+				case 1:
+					// UPNP
+					uPnPHandler.searchUPnp();
+					break;
+				case 2:
+					// SMB
+					if(sambaExplorer == null) {
+						sambaExplorer = new SambaExplorer(MainActivity.this);
+					}
+					adapter.clear();
+					adapter.notifyDataSetChanged();
+					new SmbScannerTask(MainActivity.this).execute();
+					break;
+				}
+				drawerList.setItemChecked(position, true);
+				drawerLayout.closeDrawers();
+			}
+		});
+
+        getActionBar().setDisplayHomeAsUpEnabled(true);
+        getActionBar().setHomeButtonEnabled(true);
+	}
+
+
+
+	private void initSourceDialogAndUPnP() {
+		bldr = new NetworkSourceDialogBuilder(MainActivity.this);
+		if(uPnPHandler == null) {
+			initUPnP();
+		}
+	}
+
+
 
 	private void initImageLoader() {
 
@@ -154,9 +248,7 @@ public class MainActivity extends ActionBarActivity {
 
 	private void initUPnP() {
 		uPnPHandler = new UPnPHandler(this);
-		uPnPHandler.initUPnpService();	
-		
-		sambaExplorer = new SambaExplorer(this);
+		uPnPHandler.initUPnpService();			
 	}
 
 
@@ -264,6 +356,32 @@ public class MainActivity extends ActionBarActivity {
 		super.onDestroy();
 		
 	}
+	
+	 @Override
+	    protected void onPostCreate(Bundle savedInstanceState) {
+	        super.onPostCreate(savedInstanceState);
+	        // Sync the toggle state after onRestoreInstanceState has occurred.
+	        mDrawerToggle.syncState();
+	    }
+
+	    @Override
+	    public void onConfigurationChanged(Configuration newConfig) {
+	        super.onConfigurationChanged(newConfig);
+	        mDrawerToggle.onConfigurationChanged(newConfig);
+	    }
+
+	    @Override
+	    public boolean onOptionsItemSelected(MenuItem item) {
+	        // Pass the event to ActionBarDrawerToggle, if it returns
+	        // true, then it has handled the app icon touch event
+	        if (mDrawerToggle.onOptionsItemSelected(item)) {
+	          return true;
+	        }
+	        // Handle your other action bar items...
+
+	        return super.onOptionsItemSelected(item);
+	    }
+
 
 	private void initMediaRouter() {
 		mMediaRouter = MediaRouter.getInstance(getApplicationContext());
@@ -622,19 +740,19 @@ public class MainActivity extends ActionBarActivity {
 		
 		
 		// Experimental, search for UPNP stuff
-		MenuItem searchUPnpIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_search_upnp);
-		searchUPnpIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-
-			@Override
-			public boolean onMenuItemClick(MenuItem item) {
-				resetMediaControlsOnRescan();
-				if(uPnPHandler == null) {
-					initUPnP();
-				}
-				uPnPHandler.searchUPnp();
-				return false;
-			}
-		});
+//		MenuItem searchUPnpIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_search_upnp);
+//		searchUPnpIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+//
+//			@Override
+//			public boolean onMenuItemClick(MenuItem item) {
+//				resetMediaControlsOnRescan();
+//				if(uPnPHandler == null) {
+//					initUPnP();
+//				}
+//				uPnPHandler.searchUPnp();
+//				return false;
+//			}
+//		});
 		
 		MenuItem settingsIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_settings);
 		settingsIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
@@ -958,9 +1076,22 @@ public class MainActivity extends ActionBarActivity {
 	}
 
 
-
+	public UPnPHandler getUPnPHandler() {
+		return uPnPHandler;
+	}
+	
 	public SambaExplorer getSambaExplorer() {
 		return sambaExplorer;
+	}
+
+	public NetworkSourceArrayAdapter getNetworkSourceArrayAdapter() {
+		return bldr.getAdapter();
+	}
+
+
+
+	public void showNetworkSourceDialog() {
+		bldr.showNetworkSourceDialog();
 	}
 	
 }

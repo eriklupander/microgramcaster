@@ -39,5 +39,15 @@
 	 -->
 	<string name="layout_microgramcaster">Layout information</string>
 	<string name="layout_microgramcaster_desc">Uses standard layout</string>
+	
+	<string name="drawer_open">Drawer open</string>
+	<string name="drawer_close">Drawer closed</string>
+	
+	<string-array name="src_categories">
+        <item>Local file system</item>
+        <item>UPnP Media Server</item>
+        <item>SMB Network Share</item>
+    </string-array>
+
 </resources>
 

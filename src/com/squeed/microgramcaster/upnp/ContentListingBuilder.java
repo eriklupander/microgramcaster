@@ -163,8 +163,6 @@ public class ContentListingBuilder {
 							mi.setData(item.getId());
 							boolean thumbNailAdded = addThumbnailBitmap(item, mi);
 							if(!thumbNailAdded) {
-//								Bitmap scaledBitmap = Bitmap.createBitmap(
-//										);
 								mi.setThumbnail(BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_menu_archive));
 							}
 							mi.setType(Constants.DLNA_FOLDER);

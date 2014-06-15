@@ -1,8 +1,5 @@
 package com.squeed.microgramcaster.upnp;
 
-import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
-
 import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.model.meta.Device;
 import org.fourthline.cling.model.meta.LocalDevice;
@@ -12,26 +9,19 @@ import org.fourthline.cling.model.meta.Service;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
 
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.IBinder;
 import android.util.Log;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.TextView;
 
 import com.squeed.microgramcaster.MainActivity;
-import com.squeed.microgramcaster.R;
-import com.squeed.microgramcaster.smb.SmbScannerTask;
+import com.squeed.microgramcaster.source.NetworkSourceArrayAdapter;
+import com.squeed.microgramcaster.source.NetworkSourceItem;
+import com.squeed.microgramcaster.source.NetworkSourceType;
 
 
 public class UPnPHandler {
@@ -40,6 +30,9 @@ public class UPnPHandler {
 	    private AndroidUpnpService upnpService;
 
 		private MainActivity activity;
+		private ContentListingBuilder dlnaContentListingBuilder;
+
+		private final Object MUTEX = new Object();
 
 		private static final String TAG = "UPnPHandler";
 	    
@@ -62,21 +55,18 @@ public class UPnPHandler {
 	            for (Device device : upnpService.getRegistry().getDevices()) {
 	                registryListener.deviceAdded(device);
 	            }
-	            arrayAdapter.notifyDataSetChanged();
+	            getNetworkSourceArrayAdapter().notifyDataSetChanged();
 
 	            // Search asynchronously for all devices, they will respond soon
-	            upnpService.getControlPoint().search();
+	            upnpService.getControlPoint().search();	            
 	        }
 
 	        public void onServiceDisconnected(ComponentName className) {
 	            upnpService = null;
 	        }
 	    };
-
-		private UPnPDeviceAdapter arrayAdapter;
-
-		private ContentListingBuilder dlnaContentListingBuilder;
-	    
+		
+		
 	    
 	    protected class BrowseRegistryListener extends DefaultRegistryListener {
 
@@ -117,15 +107,20 @@ public class UPnPHandler {
 	        	activity.runOnUiThread(new Runnable() {
 	                public void run() {
 	                    DeviceDisplay d = new DeviceDisplay(device);
-	                    int position = arrayAdapter.getPosition(d);
+	                    String name =
+	                    		device.getDetails() != null && device.getDetails().getFriendlyName() != null
+	                                ? device.getDetails().getFriendlyName()
+	                                : device.getDisplayString();
+	                    NetworkSourceItem item = new NetworkSourceItem(name, d.getDevice().getDetails().getManufacturerDetails().getManufacturer(), NetworkSourceType.UPNP, d);
+	                    int position = getNetworkSourceArrayAdapter().getPosition(item);
 	                    if (position >= 0) {
 	                        // Device already in the list, re-set new value at same position
-	                    	arrayAdapter.remove(d);
-	                    	arrayAdapter.insert(d, position);
+	                    	getNetworkSourceArrayAdapter().remove(item);
+	                    	getNetworkSourceArrayAdapter().insert(item, position);
 	                    } else {
-	                    	arrayAdapter.add(d);
+	                    	getNetworkSourceArrayAdapter().add(item);
 	                    }
-	                    arrayAdapter.notifyDataSetChanged();
+	                    getNetworkSourceArrayAdapter().notifyDataSetChanged();
 	                    Log.i(TAG, "Added UPNP device: " + d.toString() +  "\n\n" + d.getDetailsMessage());
 	                }
 	            });
@@ -134,22 +129,29 @@ public class UPnPHandler {
 	        public void deviceRemoved(final Device device) {
 	        	activity.runOnUiThread(new Runnable() {
 	                public void run() {
-	                    //listAdapter.remove(new DeviceDisplay(device));
+	                	DeviceDisplay d = new DeviceDisplay(device);
+	                	NetworkSourceItem item = new NetworkSourceItem(d.getDevice().getDisplayString(), d.getDevice().getDetails().getManufacturerDetails().getManufacturer(), NetworkSourceType.UPNP, d);
+	                    
+	                    getNetworkSourceArrayAdapter().remove(item);
 	                	Log.i("UPnPHandler", "Removed UPNP device: " + device.getDisplayString());
 	                }
 	            });
 	        }
 	    }
 
+	    private NetworkSourceArrayAdapter getNetworkSourceArrayAdapter() {
+			return activity.getNetworkSourceArrayAdapter();
+		}
 	   
 	    public void initUPnpService() {
-	    	arrayAdapter = new UPnPDeviceAdapter(activity, R.layout.upnp_device_listview_item, new ArrayList<DeviceDisplay>());
+	    	//getNetworkSourceArrayAdapter() = new UPnPDeviceAdapter(activity, R.layout.upnp_device_listview_item, new ArrayList<DeviceDisplay>());
 			// This will start the UPnP service if it wasn't already started
+	    	
 	    	activity.getApplicationContext().bindService(
-	            new Intent(activity, BrowserUpnpService.class),
-	            serviceConnection,
-	            Context.BIND_AUTO_CREATE
-	        );
+    	            new Intent(activity, BrowserUpnpService.class),
+    	            serviceConnection,
+    	            Context.BIND_AUTO_CREATE);
+    		
 	        
 	        dlnaContentListingBuilder = new ContentListingBuilder(activity, this);
 		}
@@ -165,8 +167,9 @@ public class UPnPHandler {
 	    }
 	    
 	    public void searchUPnp() {
-	    	arrayAdapter.clear();
-	    	arrayAdapter.notifyDataSetChanged();
+	    	getNetworkSourceArrayAdapter().clear();
+	    	getNetworkSourceArrayAdapter().notifyDataSetChanged();
+	    	
 	    	
 	    	if (upnpService != null) {
 	    		upnpService.getRegistry().removeAllRemoteDevices();
@@ -175,111 +178,108 @@ public class UPnPHandler {
 	    		// Probably unnecessary...
 	    		// Toast.makeText(activity, "UPnpService not initialized.", Toast.LENGTH_LONG).show();
 	    	}
-	    	showUPnPDeviceListDialog();
+	    	activity.showNetworkSourceDialog();
 	    }
-
-	    
-	    Dialog upnpDeviceDialog;
-
-		protected RemoteService currentService;
+	  
+		private RemoteService currentService;
 
 		
 	    
-	    private void showUPnPDeviceListDialog() {
-	    	AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-	    	builder.setTitle("Select Media Source");
-	    	//builder.setMessage("UPnP scan may take a few moments...");
-	    	LinearLayout layout = new LinearLayout(activity);
-	    	layout.setOrientation(LinearLayout.VERTICAL);
-	    	
-	    	ListView upnpDeviceList = new ListView(activity);
-	    	
-	    	
-	    	upnpDeviceList.setAdapter(arrayAdapter);
-	    	upnpDeviceList.setOnItemClickListener(new OnItemClickListener() {
-				
-				@Override
-				public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
-					
-					Device unspecDevice = arrayAdapter.getItem(position).getDevice();
-					if(unspecDevice instanceof RemoteDevice) {
-						RemoteDevice currentDevice = (RemoteDevice) unspecDevice; 
-						for (RemoteService service : currentDevice.getServices()) {
-			                if (service.getServiceType().getType().equals("ContentDirectory")) {
-			                	currentService = service;	
-			                	dlnaContentListingBuilder.clearContainerIdStack();
-			                	dlnaContentListingBuilder.buildFolderListing(null);
-			                }
-			            }
-					}
-					
-					upnpDeviceDialog.dismiss();
-				}
-			});
-	    	
-	    	TextView localText = new TextView(activity);
-	    	localText.setPadding(4, 4, 4, 0);
-	    	localText.setTextSize(16);
-	    	localText.setTypeface(null, Typeface.BOLD);
-	    	localText.setText("Local file system");
-	    	OnClickListener cl = new OnClickListener() {
-				
-				@Override
-				public void onClick(View v) {
-					upnpDeviceDialog.dismiss();
-					activity.listVideoFiles();
-				}
-			};
-	    	localText.setOnClickListener(cl);
-	    	TextView underText = new TextView(activity);
-	    	underText.setPadding(4, 0, 4, 0);
-	    	underText.setTextSize(14);
-	    	underText.setText("Browse files on your local file system");
-	    	underText.setOnClickListener(cl);
-	    	
-	    	layout.addView(localText);
-	    	layout.addView(underText);
-	    	layout.addView(upnpDeviceList);
-	    	
-	    	// END UPNP LISTING
-	    	
-	    	// START SMB
-	    	TextView smbText = new TextView(activity);
-	    	smbText.setPadding(4, 4, 4, 0);
-	    	smbText.setTextSize(16);
-	    	smbText.setTypeface(null, Typeface.BOLD);
-	    	smbText.setText("SMB Network share");
-	    	OnClickListener clSmb = new OnClickListener() {
-				
-				@Override
-				public void onClick(View v) {
-					activity.runOnUiThread(new Runnable() {
-
-						@Override
-						public void run() {
-							activity.getMediaItemListAdapter().clear();
-							activity.getMediaItemListAdapter().notifyDataSetChanged();
-							upnpDeviceDialog.hide();
-						}
-					});
-					new SmbScannerTask(activity).execute();
-				}
-			};
-			smbText.setOnClickListener(clSmb);
-	    	TextView smbUnderText = new TextView(activity);
-	    	smbUnderText.setPadding(4, 0, 4, 0);
-	    	smbUnderText.setTextSize(14);
-	    	smbUnderText.setText("Browse SMB shares on your local network");
-	    	smbUnderText.setOnClickListener(clSmb);
-	    	
-	    	layout.addView(smbText);
-	    	layout.addView(smbUnderText);
-	    	
-	    	builder.setView(layout);
-	    	upnpDeviceDialog = builder.create();
-
-	    	upnpDeviceDialog.show();
-	    }
+//	    private void showUPnPDeviceListDialog() {
+//	    	AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+//	    	builder.setTitle("Select Media Source");
+//	    	//builder.setMessage("UPnP scan may take a few moments...");
+//	    	LinearLayout layout = new LinearLayout(activity);
+//	    	layout.setOrientation(LinearLayout.VERTICAL);
+//	    	
+//	    	ListView upnpDeviceList = new ListView(activity);
+//	    	
+//	    	
+//	    	upnpDeviceList.setAdapter(getNetworkSourceArrayAdapter());
+//	    	upnpDeviceList.setOnItemClickListener(new OnItemClickListener() {
+//				
+//				@Override
+//				public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
+//					
+//					Device unspecDevice = getNetworkSourceArrayAdapter().getItem(position).getDevice();
+//					if(unspecDevice instanceof RemoteDevice) {
+//						RemoteDevice currentDevice = (RemoteDevice) unspecDevice; 
+//						for (RemoteService service : currentDevice.getServices()) {
+//			                if (service.getServiceType().getType().equals("ContentDirectory")) {
+//			                	currentService = service;	
+//			                	dlnaContentListingBuilder.clearContainerIdStack();
+//			                	dlnaContentListingBuilder.buildFolderListing(null);
+//			                }
+//			            }
+//					}
+//					
+//					upnpDeviceDialog.dismiss();
+//				}
+//			});
+//	    	
+//	    	TextView localText = new TextView(activity);
+//	    	localText.setPadding(4, 4, 4, 0);
+//	    	localText.setTextSize(16);
+//	    	localText.setTypeface(null, Typeface.BOLD);
+//	    	localText.setText("Local file system");
+//	    	OnClickListener cl = new OnClickListener() {
+//				
+//				@Override
+//				public void onClick(View v) {
+//					upnpDeviceDialog.dismiss();
+//					activity.listVideoFiles();
+//				}
+//			};
+//	    	localText.setOnClickListener(cl);
+//	    	TextView underText = new TextView(activity);
+//	    	underText.setPadding(4, 0, 4, 0);
+//	    	underText.setTextSize(14);
+//	    	underText.setText("Browse files on your local file system");
+//	    	underText.setOnClickListener(cl);
+//	    	
+//	    	layout.addView(localText);
+//	    	layout.addView(underText);
+//	    	layout.addView(upnpDeviceList);
+//	    	
+//	    	// END UPNP LISTING
+//	    	
+//	    	// START SMB
+//	    	TextView smbText = new TextView(activity);
+//	    	smbText.setPadding(4, 4, 4, 0);
+//	    	smbText.setTextSize(16);
+//	    	smbText.setTypeface(null, Typeface.BOLD);
+//	    	smbText.setText("SMB Network share");
+//	    	OnClickListener clSmb = new OnClickListener() {
+//				
+//				@Override
+//				public void onClick(View v) {
+//					activity.runOnUiThread(new Runnable() {
+//
+//						@Override
+//						public void run() {
+//							activity.getMediaItemListAdapter().clear();
+//							activity.getMediaItemListAdapter().notifyDataSetChanged();
+//							upnpDeviceDialog.hide();
+//						}
+//					});
+//					new SmbScannerTask(activity).execute();
+//				}
+//			};
+//			smbText.setOnClickListener(clSmb);
+//	    	TextView smbUnderText = new TextView(activity);
+//	    	smbUnderText.setPadding(4, 0, 4, 0);
+//	    	smbUnderText.setTextSize(14);
+//	    	smbUnderText.setText("Browse SMB shares on your local network");
+//	    	smbUnderText.setOnClickListener(clSmb);
+//	    	
+//	    	layout.addView(smbText);
+//	    	layout.addView(smbUnderText);
+//	    	
+//	    	builder.setView(layout);
+//	    	upnpDeviceDialog = builder.create();
+//
+//	    	upnpDeviceDialog.show();
+//	    }
 	    
 
 		public Service getCurrentService() {
@@ -291,11 +291,27 @@ public class UPnPHandler {
 		}
 
 		public void buildContentListing(String containerId) {
-			//dlnaContentListingBuilder.startBuildDLNAContentListing();
 			dlnaContentListingBuilder.buildFolderListing(containerId);
 		}
 
 		public void handleUpPressed() {
 			dlnaContentListingBuilder.popContainerIdStack();
+		}
+
+		public void handleNetworkSourceSelected(NetworkSourceItem item) {
+			if(item.getNetworkObject() != null && item.getNetworkObject() instanceof DeviceDisplay) {
+				DeviceDisplay dd = (DeviceDisplay) item.getNetworkObject();
+				Device unspecDevice = dd.getDevice();
+				if(unspecDevice instanceof RemoteDevice) {
+					RemoteDevice currentDevice = (RemoteDevice) unspecDevice; 
+					for (RemoteService service : currentDevice.getServices()) {
+		                if (service.getServiceType().getType().equals("ContentDirectory")) {
+		                	currentService = service;	
+		                	dlnaContentListingBuilder.clearContainerIdStack();
+		                	dlnaContentListingBuilder.buildFolderListing(null);
+		                }
+		            }
+				}
+			}
 		}
 }

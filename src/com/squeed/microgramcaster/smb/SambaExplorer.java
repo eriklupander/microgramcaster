@@ -19,6 +19,7 @@ import com.squeed.microgramcaster.MainActivity;
 import com.squeed.microgramcaster.R;
 import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaItemComparator;
+import com.squeed.microgramcaster.source.NetworkSourceItem;
 
 public class SambaExplorer {
 	
@@ -26,25 +27,15 @@ public class SambaExplorer {
 
 	private MainActivity mainActivity;
 	
-	//public ArrayAdapter<String> mList;
+	
+	private String mHost;
+	private int curListID = 0;
 
-	public String[] mListStrings;
-	public String[] mListContents;
-	public String mHost;
-	int curListID = 0;
-
-	public boolean active;
+	private boolean active;
 	private String IPsubnet;
 
 	public SambaExplorer(MainActivity mainActivity) {
 		this.mainActivity = mainActivity;
-	}
-
-	private static String ipAddressToString(int addr) {
-		StringBuffer buf = new StringBuffer();
-		buf.append(addr & 0xff).append('.').append((addr >>>= 8) & 0xff).append('.').append((addr >>>= 8) & 0xff)
-				.append('.').append((addr >>>= 8) & 0xff);
-		return buf.toString();
 	}
 
 	private static String getIPsubnet(int addr) {
@@ -53,96 +44,10 @@ public class SambaExplorer {
 				.append('.');
 		return buf.toString();
 	}
-
-//	Thread m_subnetScanThread;
-//	public int numThreadsRunning;
-//	public int serversScanned;
-//
-//	class SubnetScanThread implements Runnable {
-//		public SambaExplorer mOwner;
-//		
-//		private Activity activity;
-//
-//		SubnetScanThread(SambaExplorer owner, MainActivity mainActivity) {
-//			mOwner = owner;
-//			activity = mainActivity;
-//		}
-//
-//		@Override
-//		public void run() {
-//
-//			int timeout = 1000;
-//			int start = 1;
-//			int end = 10;
-//
-//			mOwner.numThreadsRunning++;
-//
-//			if (mOwner.IPsubnet.endsWith("*")) {
-//				mOwner.IPsubnet = mOwner.IPsubnet.substring(0, mOwner.IPsubnet.length() - 1);
-//			}
-//
-//			for (int tries = 0; tries < 1; tries++) {
-//				for (int i = start; i <= end; i++) {
-//					String serverName = new String(mOwner.IPsubnet + String.valueOf(i));
-//					mOwner.serversScanned++;
-//
-//					while (!mOwner.active) {
-//						try {
-//							Thread.sleep(1000);
-//						} catch (InterruptedException e) {
-//							// TODO Auto-generated catch block
-//							e.printStackTrace();
-//						}
-//					}
-//
-//					try {
-//						InetAddress serverAddr = InetAddress.getByName(serverName);
-//						activity.getWindow().setFeatureInt(Window.FEATURE_PROGRESS,
-//								(int) (9999.0 * ((1.0 + mOwner.serversScanned) / 256)));
-//						if (serverAddr.isReachable(timeout)) {
-//							mOwner.addListItem("smb://" + serverAddr.getCanonicalHostName() + "/");
-//						}
-//					} catch (Exception e) {
-//
-//						mOwner.addListItem(e.getMessage());
-//
-//					}
-//				}
-//				timeout += 500;
-//			}
-//
-//			if (mOwner.numThreadsRunning == 1) {
-//				// if we're the last thread running...
-//
-//				Runnable alertDialog = new Runnable() {
-//					@Override
-//					public void run() {
-//						Toast.makeText(mainActivity, "Finished scanning " + mOwner.serversScanned + " servers", 0);
-//					}
-//				};
-//
-//				mainActivity.runOnUiThread(alertDialog);
-//			}
-//
-//			mOwner.numThreadsRunning--;
-//		}
-//
-//	};
-
-	private String mSubnetOverride;
-
 	
 	public void init() {
 		
-		mListStrings = new String[255];
-		mListContents = new String[255];
-		for (int i = 0; i < 255; i++) {
-			mListStrings[i] = "";
-			mListContents[i] = "";
-		}
-
 		
-
 		ConnectivityManager cm = (ConnectivityManager) mainActivity.getSystemService(mainActivity.CONNECTIVITY_SERVICE);
 		NetworkInfo ni = cm.getActiveNetworkInfo();
 		if (ni.getType() == ConnectivityManager.TYPE_MOBILE) {
@@ -154,187 +59,41 @@ public class SambaExplorer {
 		DhcpInfo info = wifi.getDhcpInfo();
 		IPsubnet = getIPsubnet(info.ipAddress);
 
-		mHost = null;
-
-		//Intent intent = mainActivity.getIntent();
-		//mHost = intent.getDataString();
 		mHost = "";
-		// mSubnetOverride = intent.getStringExtra("subnet");
 
-		if (mHost == null) {
-			// m_subnetScanThread = new Thread(new SubnetScanThread(this, mainActivity));
-			// m_subnetScanThread.start();
+		jcifs.Config.setProperty("jcifs.encoding", "Cp1252");
+		jcifs.Config.setProperty("jcifs.smb.lmCompatibility", "0");
+		jcifs.Config.setProperty("jcifs.netbios.hostname", "AndroidPhone");
 
-			// startActivity(new
-			// Intent(this,com.shank.SambaExplorer.PickHost.class));
+		jcifs.Config.registerSmbURLHandler();
 
-//			try {
-//				Intent i = new Intent("com.shank.portscan.PortScan.class");
-//				mainActivity.startActivity(i);
-//			} catch (ActivityNotFoundException e) {
-//				Intent i = new Intent(Intent.ACTION_VIEW);
-//				i.setData(Uri.parse("market://search?q=NetScan"));
-//				mainActivity.startActivity(i);
-//			}
-		} else {
-
-			// setLastListItem("Connecting to " + mHost);
-
-			jcifs.Config.setProperty("jcifs.encoding", "Cp1252");
-			jcifs.Config.setProperty("jcifs.smb.lmCompatibility", "0");
-			jcifs.Config.setProperty("jcifs.netbios.hostname", "AndroidPhone");
-
-			jcifs.Config.registerSmbURLHandler();
-
-			if (!mHost.startsWith("smb:/")) {
-				if (mHost.startsWith("/")) {
-					mHost = "smb:/" + mHost + "/";
-				} else {
-					mHost = "smb://" + mHost + "/";
-				}
-			}
-
-			SmbFile f;
-			try {
-				f = new SmbFile(mHost);
-				
-					
-				if (f.canRead()) {
-
-					traverseSMB(f, 2);
-
-				}
-			} catch (SmbAuthException e) {
-				//mainActivity.startActivity(new Intent(this, com.shank.SambaExplorer.SambaLogin.class).putExtra("path", mHost));
-				Log.e("SambaExplorer", "SmbAuthException: " + e.getMessage());
-			} catch (MalformedURLException e) {
-				final MalformedURLException E = e;
-				Runnable dialogPopup = new Runnable() {
-					@Override
-					public void run() {
-						String StackTrace = "";
-						StackTraceElement[] Stack = E.getStackTrace();
-						for (int i = 0; i < Stack.length; i++) {
-							StackTrace += Stack[i].toString() + "\n";
-						}
-						new AlertDialog.Builder(mainActivity).setMessage(StackTrace).setTitle(E.toString())
-								.show();
-					}
-				};
-				mainActivity.runOnUiThread(dialogPopup);
-			} catch (SmbException e) {
-				final SmbException E = e;
-				Runnable dialogPopup = new Runnable() {
-					@Override
-					public void run() {
-						String StackTrace = "";
-						StackTraceElement[] Stack = E.getStackTrace();
-						for (int i = 0; i < Stack.length; i++) {
-							StackTrace += Stack[i].toString() + "\n";
-						}
-						new AlertDialog.Builder(mainActivity).setMessage(StackTrace).setTitle(E.toString())
-								.show();
-					}
-				};
-				mainActivity.runOnUiThread(dialogPopup);
-			} catch (IOException e) {
-				final IOException E = e;
-				Runnable dialogPopup = new Runnable() {
-					@Override
-					public void run() {
-						String StackTrace = "";
-						StackTraceElement[] Stack = E.getStackTrace();
-						for (int i = 0; i < Stack.length; i++) {
-							StackTrace += Stack[i].toString() + "\n";
-						}
-						new AlertDialog.Builder(mainActivity).setMessage(StackTrace).setTitle(E.toString())
-								.show();
-					}
-				};
-				mainActivity.runOnUiThread(dialogPopup);
+		if (!mHost.startsWith("smb:/")) {
+			if (mHost.startsWith("/")) {
+				mHost = "smb:/" + mHost + "/";
+			} else {
+				mHost = "smb://" + mHost + "/";
 			}
 		}
+
+		SmbFile f;
+		try {
+			f = new SmbFile(mHost);
+							
+			if (f.canRead()) {
+				traverseSMB(f, 2);
+			}
+		} catch (SmbAuthException e) {
+			Log.e("SambaExplorer", "SmbAuthException: " + e.getMessage());
+		} catch (MalformedURLException e) {
+			Log.e(TAG, "MalformedURLException initializing SMB explorer: " + e.getMessage());
+		} catch (SmbException e) {
+			Log.e(TAG, "SmbException initializing SMB explorer: " + e.getMessage());
+		} catch (IOException e) {
+			Log.e(TAG, "IOException initializing SMB explorer: " + e.getMessage());
+		}
 	}
-
 	
-//	@Override
-//	public void onListItemClick(ListView l, View v, int position, long id) {
-//		String share = mListContents[position];
-//		if (share.startsWith("smb://")) {
-//
-//			if (share.endsWith("/")) {
-//
-//				Intent intent = new Intent(Intent.ACTION_VIEW);
-//				intent.setData(Uri.parse(share));
-//				startActivity(intent);
-//
-//			} else {
-//				// files
-//
-//				DownloadService.QueueDownload(this, share);
-//
-//			}
-//
-//		}
-//
-//	}
-//
-//	@Override
-//	public boolean onCreateOptionsMenu(Menu menu) {
-//		super.onCreateOptionsMenu(menu);
-//
-//		menu.add(0, 0, 0, "Download All");
-//		menu.add(0, 1, 1, "Recursive Download All");
-//		menu.add(0, 2, 2, "Download Queue");
-//		menu.add(0, 3, 3, "Options");
-//
-//		return true;
-//	}
 
-//	@Override
-//	public boolean onOptionsItemSelected(MenuItem item) {
-//
-//		switch (item.getItemId()) {
-//		case 0:
-//			new Thread(new Runnable() {
-//				@Override
-//				public void run() {
-//					try {
-//						downloadDirectory(new SmbFile(mHost), 1);
-//					} catch (MalformedURLException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					} catch (IOException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-//				}
-//			}).start();
-//			break;
-//		case 1:
-//			new Thread(new Runnable() {
-//				@Override
-//				public void run() {
-//					try {
-//						downloadDirectory(new SmbFile(mHost), 255);
-//					} catch (MalformedURLException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					} catch (IOException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-//				}
-//			}).start();
-//			break;
-//
-//		case 2:
-//			Intent intent = new Intent(this, com.shank.SambaExplorer.DownloadQueue.class);
-//			startActivity(intent);
-//			break;
-//		}
-//		return false;
-//	}
 
 	private Runnable updateAdapter = new Runnable() {
 		@Override
@@ -347,52 +106,6 @@ public class SambaExplorer {
 		mainActivity.runOnUiThread(updateAdapter);
 	}
 
-//	public void setLastListItem(String str) {
-//		mListStrings[curListID] = str;
-//		forceUpdate();
-//	}
-//
-//	public void addListItem(String server) {
-//		if (server.endsWith("/")) {
-//			String temp = server.substring(0, server.lastIndexOf('/'));
-//			mListStrings[curListID] = server.substring(temp.lastIndexOf('/'));
-//		} else {
-//			mListStrings[curListID] = server.substring(server.lastIndexOf('/'));
-//		}
-//		mListContents[curListID] = server;
-//		curListID++;
-//		forceUpdate();
-//
-//	}
-
-//	void downloadDirectory(SmbFile f, int depth) throws MalformedURLException, IOException {
-//
-//		if (depth == 0) {
-//			return;
-//		}
-//		try {
-//			SmbFile[] l;
-//
-//			l = f.listFiles();
-//
-//			for (int i = 0; l != null && i < l.length; i++) {
-//				try {
-//					if (l[i].isDirectory()) {
-//						downloadDirectory(l[i], depth - 1);
-//					} else {
-//						//downloadService.queueDownload(this, l[i].getPath());
-//					}
-//
-//					Thread.sleep(100);
-//				} catch (IOException ioe) {
-//
-//				}
-//			}
-//
-//		} catch (Exception e) {
-//			addListItem(e.toString());
-//		}
-//	}
 	
 	private MediaItemComparator comparator = new MediaItemComparator();
 
@@ -452,15 +165,13 @@ public class SambaExplorer {
 									mainActivity.getMediaItemListAdapter().add(mi);
 									mainActivity.getMediaItemListAdapter().sort(comparator);
 									mainActivity.getMediaItemListAdapter().notifyDataSetChanged();
-								}
-								
+								}								
 							});
 						}
 					}
 
 				} catch (SmbAuthException e) {
-//					startActivity(new Intent(this, com.shank.SambaExplorer.SambaLogin.class).putExtra("path",
-//							l[i].getCanonicalPath()));
+					// Here we could launch an Activity to enter username/password for a SMB share
 					Log.e(TAG, "SmbAuthException: " + e.getMessage());
 				} catch (IOException ioe) {
 
@@ -468,12 +179,14 @@ public class SambaExplorer {
 			}
 
 		} catch (SmbAuthException e) {
-//			mainActivity.startActivity(new Intent(this, com.shank.SambaExplorer.SambaLogin.class).putExtra("path",
-//					f.getCanonicalPath()));
+			// Here we could launch an Activity to enter username/password for a SMB share
 		} catch (Exception e) {
 			Log.e(TAG, "Exception: " + e.getMessage());
-			//addListItem(e.toString());
 		}
+	}
+
+	public void handleNetworkSourceSelected(NetworkSourceItem item) {
+		
 	}
 
 }
