@@ -25,7 +25,7 @@ public class NonBufferedResponse extends NanoHTTPD.Response {
     @Override
     protected void sendAsFixedLength(OutputStream outputStream, PrintWriter pw) throws IOException {
     	// Need to set Content-Length as range END - START
-        int pending = (int) (data != null ? available : 0); // This is to support partial sends, see serveFile()
+        long pending = (long) (data != null ? available : 0); // This is to support partial sends, see serveFile()
         String string = header.get("Content-Range"); // Such as bytes 203437551-205074073/205074074
         if(string != null) {
         	if(string.startsWith("bytes ")) {
@@ -45,7 +45,8 @@ public class NonBufferedResponse extends NanoHTTPD.Response {
             int BUFFER_SIZE = 16 * 1024;
             byte[] buff = new byte[BUFFER_SIZE];
             while (pending > 0) {
-                int read = data.read(buff, 0, ((pending > BUFFER_SIZE) ? BUFFER_SIZE : pending));
+            	// Note the ugly cast to int to support > 2gb files. If pending < BUFFER_SIZE we can safely cast anyway.
+                int read = data.read(buff, 0, ((pending > BUFFER_SIZE) ? BUFFER_SIZE : (int) pending));
                 if (read <= 0) {
                     break;
                 }

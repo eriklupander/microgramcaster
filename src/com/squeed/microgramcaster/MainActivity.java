@@ -85,6 +85,7 @@ public class MainActivity extends ActionBarActivity {
 	private static final String TAG = "MainActivity";
 
 	private static final String APP_NAME = "4E4599F7";
+	private static final String APP_NAME_DEV = "210EE372";
 	
 	private CurrentSource currentSource = CurrentSource.LOCAL;
 

@@ -107,14 +107,7 @@ public class MyHTTPD extends NanoHTTPD {
         	// Serve media from SMB share, this could be complicated...
         	String smbFileUrl = "smb://" + requestedFile.substring(5);
         	SmbFile smbFile = new SmbFile(smbFileUrl);
-//       	InputStream is = smbFile.getInputStream();
-//        	
-//        	// For now HUGE hack, read the entire file before starting to serve...
-//        	byte[] buffer = new byte[smbFile.getContentLength()];
-//        	int bytesRead = IOUtils.read(is, buffer);
-//        	Log.i(TAG, "Read total bytes into buffer: " + bytesRead);
-//        	
-        	
+ 	
         	InputStream copyStream = new BufferedInputStream(new SmbFileInputStream(smbFile));	
         	
         	Response response = serveSmbFile(smbFileUrl, headers, copyStream, smbFile, getMimeTypeForFile(uri));
@@ -151,7 +144,7 @@ public class MyHTTPD extends NanoHTTPD {
     	Response res;
         try {
             // Calculate etag
-            String etag = Integer.toHexString((smbFile.getName() + smbFile.getLastModified() + "" + smbFile.getContentLength()).hashCode());
+            String etag = Integer.toHexString((smbFile.getName() + smbFile.getLastModified() + "" + smbFile.length()).hashCode());
 
             // Support (simple) skipping:
             long startFrom = 0;
@@ -172,7 +165,7 @@ public class MyHTTPD extends NanoHTTPD {
             }
 
             // Change return code and add Content-Range header when skipping is requested
-            long fileLen = smbFile.getContentLength();
+            long fileLen = smbFile.length();
             if (range != null && startFrom >= 0) {
                 if (startFrom >= fileLen) {
                     res = createResponse(Response.Status.RANGE_NOT_SATISFIABLE, NanoHTTPD.MIME_PLAINTEXT, "");
