@@ -75,6 +75,9 @@ public class ContentListingBuilder {
 	}
 
 	private void addBackItem() {
+		if(containerStack.size() < 2) {
+			return;
+		}
 		final MediaItem mi = new MediaItem();
 		mi.setName("");
 		mi.setData(popParentContainerIdFromStack());			

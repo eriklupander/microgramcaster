@@ -2,6 +2,7 @@ package com.squeed.microgramcaster.smb;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Stack;
 
 import jcifs.smb.SmbAuthException;
 import jcifs.smb.SmbException;
@@ -26,7 +27,7 @@ public class SambaExplorer {
 	private static final String TAG = "SambaExplorer";
 
 	private MainActivity mainActivity;
-	
+	private Stack<String> containerStack = new Stack<String>();
 	
 	private String mHost;
 	private int curListID = 0;
@@ -46,6 +47,7 @@ public class SambaExplorer {
 	}
 	
 	public void init() {
+		
 		
 		
 		ConnectivityManager cm = (ConnectivityManager) mainActivity.getSystemService(mainActivity.CONNECTIVITY_SERVICE);
@@ -74,6 +76,9 @@ public class SambaExplorer {
 				mHost = "smb://" + mHost + "/";
 			}
 		}
+		
+		containerStack.clear();
+		containerStack.push(mHost);	
 
 		SmbFile f;
 		try {
@@ -187,6 +192,29 @@ public class SambaExplorer {
 
 	public void handleNetworkSourceSelected(NetworkSourceItem item) {
 		
+	}
+	
+	String getParentContainerIdFromStack() {
+		if(containerStack.size() > 1) {
+			return containerStack.elementAt(containerStack.size() - 2); // Peek the PARENT containerId
+		} else if(containerStack.size() == 1) {
+			return containerStack.elementAt(containerStack.size() - 1);
+		} else {
+			return "smb://";	
+		}
+	}
+
+	
+	public void popContainerIdStack() {
+		containerStack.pop();
+	}
+	
+	public void clearContainerIdStack() {
+		containerStack.clear();
+	}
+
+	public Stack<String> getContainerStack() {
+		return containerStack;
 	}
 
 }

@@ -486,8 +486,19 @@ public class MainActivity extends ActionBarActivity {
 				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_BACK)) {
 					uPnPHandler.handleUpPressed();
 					uPnPHandler.buildContentListing((String) listItemView.getTag(R.id.dlna_url)); // dlna_url == containerId in this case
-				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_FILE)) {
+				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_BACK)) {
+					sambaExplorer.popContainerIdStack();
+					MainActivity.this.runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							adapter.clear();
+							adapter.notifyDataSetChanged();
+						}							
+					});
 					
+					new SmbReadFolderTask(MainActivity.this).execute((String) listItemView.getTag(R.id.dlna_url));
+					
+				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_FILE)) {					
 					
 					playSmbMedia(listItemView, position);
 					
@@ -1057,12 +1068,33 @@ public class MainActivity extends ActionBarActivity {
 			teardown();
 			super.onBackPressed();
 		} else {
-			Toast.makeText(this, "Are you sure you want to leave the application? Press back again to confirm. " +
-								 "If you want to keep casting in the background, use the Home button instead.", Toast.LENGTH_LONG).show();
-			synchronized (mutex) {
-				backPressed = true;
+			
+			// Check if we want to go up one level in a file/share browse or exit the application
+			if(sambaExplorer.getContainerStack().size() == 1) {
+				Toast.makeText(this, "Are you sure you want to leave the application? Press back again to confirm. " +
+						 "If you want to keep casting in the background, use the Home button instead.", Toast.LENGTH_LONG).show();
+				synchronized (mutex) {
+					backPressed = true;
+				}
+				handler.postDelayed(resetBackButtonState, 5000);
+			} else {
+				synchronized (mutex) {
+					backPressed = false;
+				}
+				// Go up one level instead.
+				sambaExplorer.popContainerIdStack();
+				MainActivity.this.runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						adapter.clear();
+						adapter.notifyDataSetChanged();
+					}							
+				});
+				
+				new SmbReadFolderTask(MainActivity.this).execute(sambaExplorer.getContainerStack().peek());
 			}
-			handler.postDelayed(resetBackButtonState, 5000);
+			
+			
 			
 		}
 	}

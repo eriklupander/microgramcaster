@@ -83,11 +83,10 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         	if(!objectItem.getType().equals(Constants.SMB_FILE)) {
         		holder.duration.setText(TimeFormatter.formatTime((int)(objectItem.getDuration() / 1000)));	
         	} else {
-        		//holder.duration.setText(ByteFormatter.humanReadableByteCount(objectItem.getDuration(), false));
         		holder.duration.setText(FileUtils.byteCountToDisplaySize(objectItem.getDuration()));
         	}
         	
-        } else if(objectItem.getType().equals(Constants.DLNA_BACK)) {        	
+        } else if(objectItem.getType().equals(Constants.DLNA_BACK) || objectItem.getType().equals(Constants.SMB_BACK)) {        	
         	holder.duration.setText("");        	
         } else {
         	holder.duration.setText("Folder");
