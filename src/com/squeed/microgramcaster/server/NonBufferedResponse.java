@@ -24,8 +24,19 @@ public class NonBufferedResponse extends NanoHTTPD.Response {
 
     @Override
     protected void sendAsFixedLength(OutputStream outputStream, PrintWriter pw) throws IOException {
+    	// Need to set Content-Length as range END - START
         int pending = (int) (data != null ? available : 0); // This is to support partial sends, see serveFile()
-        pw.print("Content-Length: "+pending+"\r\n");
+        String string = header.get("Content-Range"); // Such as bytes 203437551-205074073/205074074
+        if(string != null) {
+        	if(string.startsWith("bytes ")) {
+        		string = string.substring("bytes ".length());
+        	}
+        	Long start = Long.parseLong(string.split("-")[0]);
+        	pw.print("Content-Length: "+ (pending - start) +"\r\n");	
+        } else {
+        	pw.print("Content-Length: "+pending+"\r\n");	
+        }
+        
 
         pw.print("\r\n");
         pw.flush();

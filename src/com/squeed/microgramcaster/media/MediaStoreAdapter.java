@@ -47,12 +47,14 @@ public class MediaStoreAdapter {
 				MediaStore.Video.Media.DATA, 
 				MediaStore.Video.Media.SIZE,
 				MediaStore.Video.Media.DATE_MODIFIED,
-				MediaStore.Video.Media.DURATION};
+				MediaStore.Video.Media.DURATION,
+				MediaStore.Video.Media.ARTIST};
 		Cursor cur = context.getContentResolver().query(
 		    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, 
 		    retCol, 
 		    "(" + MediaStore.Video.Media.DISPLAY_NAME + " like '%.mp4' OR " + 
-		    MediaStore.Video.Media.DISPLAY_NAME + " like '%.ogv')", null, null);
+		    MediaStore.Video.Media.DISPLAY_NAME + " like '%.ogv' OR " + 
+		    MediaStore.Video.Media.DISPLAY_NAME + " like '%.ogg')", null, null);
 		if (cur.getCount() == 0) {
 		    return new ArrayList<MediaItem>();
 		}
@@ -66,6 +68,7 @@ public class MediaStoreAdapter {
 				mi.setSize(cur.getLong(3));
 				mi.setLastModified(headerDateFormat.format(new Date(cur.getLong(4))));
 				mi.setDuration(cur.getLong(5));
+				mi.setProducer(cur.getString(6));
 				mi.setType("LOCAL");
 				
 				 Bitmap bitmap = MediaStore.Video.Thumbnails.getThumbnail(
@@ -99,12 +102,14 @@ public class MediaStoreAdapter {
 				MediaStore.Video.Media.DATA, 
 				MediaStore.Video.Media.SIZE,
 				MediaStore.Video.Media.DATE_MODIFIED,
-				MediaStore.Video.Media.DURATION};
+				MediaStore.Video.Media.DURATION,
+				MediaStore.Video.Media.ARTIST};
 		Cursor cur = context.getContentResolver().query(
 		    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, 
 		    retCol, 
 		    "(" + MediaStore.Video.Media.DISPLAY_NAME + " like '%.mp4' OR " + 
-		    MediaStore.Video.Media.DISPLAY_NAME + " like '%.ogv')", null, null);
+		    MediaStore.Video.Media.DISPLAY_NAME + " like '%.ogv' OR " + 
+		    MediaStore.Video.Media.DISPLAY_NAME + " like '%.ogg')", null, null);
 		if (cur.getCount() == 0) {
 		    return false;
 		}
@@ -119,6 +124,7 @@ public class MediaStoreAdapter {
 				mi.setSize(cur.getLong(3));
 				mi.setLastModified(headerDateFormat.format(new Date(cur.getLong(4))));
 				mi.setDuration(cur.getLong(5));
+				mi.setProducer(cur.getString(6));
 				mi.setType("LOCAL");
 				MediaItemPopulatorTask task = new MediaItemPopulatorTask(context, adapter);
 				task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, mi);
@@ -140,7 +146,8 @@ public class MediaStoreAdapter {
 				MediaStore.Video.Media.DATA, 
 				MediaStore.Video.Media.SIZE,
 				MediaStore.Video.Media.DATE_MODIFIED,
-				MediaStore.Video.Media.DURATION};
+				MediaStore.Video.Media.DURATION,
+				MediaStore.Video.Media.ARTIST};
 		Cursor cur = context.getContentResolver().query(
 			    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, 
 			    retCol, 
@@ -155,6 +162,7 @@ public class MediaStoreAdapter {
 				mi.setSize(cur.getLong(3));
 				mi.setLastModified(headerDateFormat.format(new Date(cur.getLong(4))));
 				mi.setDuration(cur.getLong(5));
+				mi.setProducer(cur.getString(6));
 				mi.setType("LOCAL");
 				return mi;
 			}

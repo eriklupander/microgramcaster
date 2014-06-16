@@ -11,6 +11,7 @@ public class MediaItem {
 
 	private Integer id;
 	private String name;
+	private String producer;
 	private String data;
 	private Long size;
 	private String lastModified;
@@ -84,6 +85,15 @@ public class MediaItem {
 	public void setThumbnailUrl(String thumbnailUrl) {
 		this.thumbnailUrl = thumbnailUrl;
 	}
+	
+	
+	public String getProducer() {
+		return producer;
+	}
+	public void setProducer(String producer) {
+		this.producer = producer;
+	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;

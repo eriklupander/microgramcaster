@@ -31,8 +31,7 @@
 	         android:layout_above="@+id/statusText"
 	         android:layout_below="@+id/textView1"
 	         android:layout_centerHorizontal="true"
-	         android:choiceMode="singleChoice" >
-	
+	         android:choiceMode="singleChoice" >	
 	    </ListView>
 	
 	    <TextView

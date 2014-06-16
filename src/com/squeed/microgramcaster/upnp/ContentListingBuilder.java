@@ -1,9 +1,6 @@
 package com.squeed.microgramcaster.upnp;
 
-import java.io.InputStream;
 import java.net.URI;
-import java.net.URL;
-import java.util.Stack;
 
 import org.fourthline.cling.model.action.ActionInvocation;
 import org.fourthline.cling.model.message.UpnpResponse;
@@ -12,11 +9,11 @@ import org.fourthline.cling.support.contentdirectory.callback.Browse;
 import org.fourthline.cling.support.model.BrowseFlag;
 import org.fourthline.cling.support.model.DIDLContent;
 import org.fourthline.cling.support.model.DIDLObject;
+import org.fourthline.cling.support.model.Person;
 import org.fourthline.cling.support.model.container.Container;
 import org.fourthline.cling.support.model.item.Item;
 
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -26,6 +23,7 @@ import com.squeed.microgramcaster.MainActivity;
 import com.squeed.microgramcaster.R;
 import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaItemComparator;
+import com.squeed.microgramcaster.util.PathStack;
 import com.squeed.microgramcaster.util.TimeFormatter;
 
 public class ContentListingBuilder {
@@ -35,7 +33,7 @@ public class ContentListingBuilder {
 	private MainActivity activity;
 	private UPnPHandler upnpHandler;
 	private static final String TAG = "ContentListingBuilder";
-	private Stack<String> containerStack = new Stack<String>();
+	
 	private SharedPreferences preferences;
 	
 	public ContentListingBuilder(MainActivity activity, UPnPHandler upnpHandler) {
@@ -67,15 +65,15 @@ public class ContentListingBuilder {
 			containerId = "0";
 		
 		// Only push if container not already on stack. Check for back / up
-		if(!containerStack.contains(containerId)) {
-			containerStack.push(containerId);	
+		if(!PathStack.get().contains(containerId)) {
+			PathStack.get().push(containerId);	
 		}
 		
 		buildSingleFolderSet(upnpHandler.getCurrentService(), containerId);
 	}
 
 	private void addBackItem() {
-		if(containerStack.size() < 2) {
+		if(PathStack.get().size() < 2) {
 			return;
 		}
 		final MediaItem mi = new MediaItem();
@@ -96,10 +94,10 @@ public class ContentListingBuilder {
 	
 	
 	private String popParentContainerIdFromStack() {
-		if(containerStack.size() > 1) {
-			return containerStack.elementAt(containerStack.size() - 2); // Peek the PARENT containerId
-		} else if(containerStack.size() == 1) {
-			return containerStack.elementAt(containerStack.size() - 1);
+		if(PathStack.get().size() > 1) {
+			return PathStack.get().elementAt(PathStack.get().size() - 2); // Peek the PARENT containerId
+		} else if(PathStack.get().size() == 1) {
+			return PathStack.get().elementAt(PathStack.get().size() - 1);
 		} else {
 			return "0";	
 		}
@@ -121,6 +119,7 @@ public class ContentListingBuilder {
 					for(Item item : didl.getItems()) {
 						final MediaItem mi = new MediaItem();
 						mi.setName(item.getTitle());
+						mi.setProducer(item.getCreator());
 						mi.setData(item.getFirstResource().getValue());
 						// At least from Windows Media Server, format is H:mm:ss.SSS
 						String durStr = item.getFirstResource().getDuration();
@@ -163,6 +162,8 @@ public class ContentListingBuilder {
 							
 							final MediaItem mi = new MediaItem();
 							mi.setName(item.getTitle());
+							
+							mi.setProducer(item.getCreator());
 							mi.setData(item.getId());
 							boolean thumbNailAdded = addThumbnailBitmap(item, mi);
 							if(!thumbNailAdded) {
@@ -219,13 +220,7 @@ public class ContentListingBuilder {
 		upnpHandler.getUPnPService().getControlPoint().execute(b);
 	}
 
-	public void popContainerIdStack() {
-		containerStack.pop();
-	}
 	
-	public void clearContainerIdStack() {
-		containerStack.clear();
-	}
 
 	private void hideLoadingDialogOnUIThread() {
 		if(activity.getLoadingDialog().isShowing()) {

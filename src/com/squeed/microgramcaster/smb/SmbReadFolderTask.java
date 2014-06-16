@@ -11,6 +11,7 @@ import com.squeed.microgramcaster.Constants;
 import com.squeed.microgramcaster.MainActivity;
 import com.squeed.microgramcaster.R;
 import com.squeed.microgramcaster.media.MediaItem;
+import com.squeed.microgramcaster.util.PathStack;
 
 public class SmbReadFolderTask extends AsyncTask<String, Void, Object>{
 
@@ -25,8 +26,8 @@ public class SmbReadFolderTask extends AsyncTask<String, Void, Object>{
 		final SambaExplorer smbExplorer = ctx.getSambaExplorer();
 		final String folder = params[0];
 		// Only push if container not already on stack. Check for back / up
-		if(!smbExplorer.getContainerStack().contains(folder)) {
-			smbExplorer.getContainerStack().push(folder);	
+		if(!PathStack.get().contains(folder)) {
+			PathStack.get().push(folder);	
 		}
 		try {
 			ctx.runOnUiThread(new Runnable() {
@@ -39,7 +40,7 @@ public class SmbReadFolderTask extends AsyncTask<String, Void, Object>{
 					back.setType(Constants.SMB_BACK);
 					back.setThumbnail(BitmapFactory.decodeResource(ctx.getResources(), R.drawable.ic_menu_back));
 					ctx.getMediaItemListAdapter().clear();
-					if(smbExplorer.getContainerStack().size() > 1) {
+					if(PathStack.get().size() > 1) {
 						ctx.getMediaItemListAdapter().add(back);
 					}					
 					ctx.getMediaItemListAdapter().notifyDataSetChanged();

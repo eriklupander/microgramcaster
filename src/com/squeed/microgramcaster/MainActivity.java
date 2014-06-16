@@ -64,6 +64,7 @@ import com.squeed.microgramcaster.smb.SmbScannerTask;
 import com.squeed.microgramcaster.source.NetworkSourceArrayAdapter;
 import com.squeed.microgramcaster.source.NetworkSourceDialogBuilder;
 import com.squeed.microgramcaster.upnp.UPnPHandler;
+import com.squeed.microgramcaster.util.PathStack;
 import com.squeed.microgramcaster.util.TimeFormatter;
 import com.squeed.microgramcaster.util.WifiHelper;
 
@@ -84,6 +85,8 @@ public class MainActivity extends ActionBarActivity {
 	private static final String TAG = "MainActivity";
 
 	private static final String APP_NAME = "4E4599F7";
+	
+	private CurrentSource currentSource = CurrentSource.LOCAL;
 
 	private CastDevice mSelectedDevice;
 	private MediaRouter mMediaRouter;
@@ -192,15 +195,15 @@ public class MainActivity extends ActionBarActivity {
 				
 				switch(position) {
 				case 0:
-					// LOCAL					
+					currentSource = CurrentSource.LOCAL;				
 					listVideoFiles();
 					break;
 				case 1:
-					// UPNP
+					currentSource = CurrentSource.UPNP;
 					uPnPHandler.searchUPnp();
 					break;
 				case 2:
-					// SMB
+					currentSource = CurrentSource.SMB;
 					if(sambaExplorer == null) {
 						sambaExplorer = new SambaExplorer(MainActivity.this);
 					}
@@ -347,8 +350,7 @@ public class MainActivity extends ActionBarActivity {
 		
 		if(uPnPHandler != null) {
 			uPnPHandler.destroyUPnpService();
-		}
-			
+		}			
 		
 		dialog.dismiss();
 		loadingDialog.dismiss();
@@ -360,7 +362,6 @@ public class MainActivity extends ActionBarActivity {
 	 @Override
 	    protected void onPostCreate(Bundle savedInstanceState) {
 	        super.onPostCreate(savedInstanceState);
-	        // Sync the toggle state after onRestoreInstanceState has occurred.
 	        mDrawerToggle.syncState();
 	    }
 
@@ -377,8 +378,6 @@ public class MainActivity extends ActionBarActivity {
 	        if (mDrawerToggle.onOptionsItemSelected(item)) {
 	          return true;
 	        }
-	        // Handle your other action bar items...
-
 	        return super.onOptionsItemSelected(item);
 	    }
 
@@ -413,7 +412,8 @@ public class MainActivity extends ActionBarActivity {
 		seekBarHandler.postDelayed(run, 1000);
 	}
 
-	public void onEventPlaying(int positionSeconds) {
+	public void onEventPlaying(int positionSeconds, int totalDurationSeconds) {
+		seekBar.setMax(totalDurationSeconds);
 		currentSeekbarPosition = positionSeconds;
 		seekBarHandler.removeCallbacksAndMessages(null);
 		playIcon.setVisibility(View.GONE);
@@ -434,7 +434,8 @@ public class MainActivity extends ActionBarActivity {
 		
 	}
 
-	public void onEventPaused(int positionSeconds) {
+	public void onEventPaused(int positionSeconds, int totalDurationSeconds) {
+		seekBar.setMax(totalDurationSeconds);
 		currentSeekbarPosition = positionSeconds;
 		seekBarHandler.removeCallbacksAndMessages(null);
 		playIcon.setVisibility(View.VISIBLE);
@@ -481,13 +482,16 @@ public class MainActivity extends ActionBarActivity {
 			public void onItemClick(AdapterView<?> arg0, View listItemView, int position, long arg3) {
 				if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_ITEM)) {
 					playDlnaMedia(listItemView, position);
-				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_FOLDER)) {
+				} 
+				else if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_FOLDER)) {
 					uPnPHandler.buildContentListing((String) listItemView.getTag(R.id.dlna_url)); // dlna_url == containerId in this case
-				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_BACK)) {
+				} 
+				else if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_BACK)) {
 					uPnPHandler.handleUpPressed();
 					uPnPHandler.buildContentListing((String) listItemView.getTag(R.id.dlna_url)); // dlna_url == containerId in this case
-				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_BACK)) {
-					sambaExplorer.popContainerIdStack();
+				} 
+				else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_BACK)) {
+					PathStack.popContainerIdStack();
 					MainActivity.this.runOnUiThread(new Runnable() {
 						@Override
 						public void run() {
@@ -498,11 +502,13 @@ public class MainActivity extends ActionBarActivity {
 					
 					new SmbReadFolderTask(MainActivity.this).execute((String) listItemView.getTag(R.id.dlna_url));
 					
-				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_FILE)) {					
+				} 
+				else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_FILE)) {					
 					
 					playSmbMedia(listItemView, position);
 					
-				} else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_FOLDER)) {
+				} 
+				else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_FOLDER)) {
 					String folder = (String) listItemView.getTag(R.id.dlna_url);
 					
 						MainActivity.this.runOnUiThread(new Runnable() {
@@ -576,7 +582,7 @@ public class MainActivity extends ActionBarActivity {
 		String finalUrl = buildSmbItemURL(url);
 		Log.i(TAG, "Built SMB proxy URL: " + finalUrl);
 		
-		Command cmd = CommandFactory.buildPlayUrlCommand(finalUrl, name);
+		Command cmd = CommandFactory.buildPlayUrlCommand(finalUrl, name, null, null);
 		sendMessage(cmd);	
 		currentMediaItem = new CurrentMediaItem(name, duration, position, cmd);
 	}
@@ -596,13 +602,16 @@ public class MainActivity extends ActionBarActivity {
 		adapter.setSelectedPosition(position);
 		adapter.notifyDataSetChanged();
 
-		seekBar.setMax((int) (durationMs / 1000L));
-		currentPosition.setText(TimeFormatter.formatTime(0));
-		totalDuration.setText(TimeFormatter.formatTime((int) (durationMs / 1000L)));
-
 		currentSeekbarPosition = 0;
-
+		if(durationMs > -1) {
+			seekBar.setMax((int) (durationMs / 1000L));
+			totalDuration.setText(TimeFormatter.formatTime((int) (durationMs / 1000L)));
+		} else {
+			totalDuration.setText("");
+		}
 		showSeekbar();
+		currentPosition.setText(TimeFormatter.formatTime(0));		
+		
 		
 		if (mApiClient.isConnected()) {
 
@@ -632,7 +641,7 @@ public class MainActivity extends ActionBarActivity {
 			return;
 		}
 		preparePlayMediaItem(mi.getName(), mi.getDuration(), position);
-		Command cmd = CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName), fileName);
+		Command cmd = CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName), fileName, mi.getProducer(), null);
 		sendMessage(cmd);		
 		currentMediaItem = new CurrentMediaItem(mi.getName(), mi.getDuration(), position, cmd);
 	}
@@ -646,10 +655,12 @@ public class MainActivity extends ActionBarActivity {
 		}
 		
 		String name = (String) listItemView.getTag(R.id.dlna_name);
-		Long duration = (Long) listItemView.getTag(R.id.dlna_duration); 
+		Long duration = (Long) listItemView.getTag(R.id.dlna_duration);
+		String producer = (String) listItemView.getTag(R.id.dlna_producer);
+		String thumbnailUrl = (String) listItemView.getTag(R.id.dlna_thumbnail_url);
 		preparePlayMediaItem(name, duration, position);
 		
-		Command cmd = CommandFactory.buildPlayUrlCommand(url, name);
+		Command cmd = CommandFactory.buildPlayUrlCommand(url, name, producer, thumbnailUrl);
 		sendMessage(cmd);	
 		currentMediaItem = new CurrentMediaItem(name, duration, position, cmd);
 	}
@@ -713,24 +724,6 @@ public class MainActivity extends ActionBarActivity {
 		// Set the MediaRouteActionProvider selector for device discovery.
 		if (mediaRouteActionProvider != null)
 			mediaRouteActionProvider.setRouteSelector(mMediaRouteSelector);
-	
-//		MenuItem refreshIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_refresh);
-//		refreshIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-//
-//			@Override
-//			public boolean onMenuItemClick(MenuItem item) {
-//				resetMediaControlsOnRescan();
-//				if(uPnPHandler == null) {
-//					initUPnP();
-//				}
-//				if(uPnPHandler.getCurrentService() != null) {
-//					uPnPHandler.buildContentListing(null);
-//				} else {
-//					listVideoFiles();
-//				}				
-//				return false;
-//			}			
-//		});
 
 		rotateIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_rotate);
 		rotateIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
@@ -748,22 +741,7 @@ public class MainActivity extends ActionBarActivity {
 			}
 		});
 		rotateIcon.setVisible(false);
-		
-		
-		// Experimental, search for UPNP stuff
-//		MenuItem searchUPnpIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_search_upnp);
-//		searchUPnpIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-//
-//			@Override
-//			public boolean onMenuItemClick(MenuItem item) {
-//				resetMediaControlsOnRescan();
-//				if(uPnPHandler == null) {
-//					initUPnP();
-//				}
-//				uPnPHandler.searchUPnp();
-//				return false;
-//			}
-//		});
+
 		
 		MenuItem settingsIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_settings);
 		settingsIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
@@ -776,19 +754,7 @@ public class MainActivity extends ActionBarActivity {
 				return false;
 			}			
 		});
-		
-		// Experimental, search for SMB stuff
-//		MenuItem searchSmbIcon = menu.findItem(com.squeed.microgramcaster.R.id.action_search_smb);
-//		searchSmbIcon.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-//
-//			@Override
-//			public boolean onMenuItemClick(MenuItem item) {
-//				resetMediaControlsOnRescan();
-//				//new SambaExplorer(MainActivity.this).init();
-//				new SmbScannerTask(MainActivity.this, adapter).execute();
-//				return false;
-//			}
-//		});
+
 		return true;
 	}
 
@@ -1070,19 +1036,19 @@ public class MainActivity extends ActionBarActivity {
 		} else {
 			
 			// Check if we want to go up one level in a file/share browse or exit the application
-			if(sambaExplorer.getContainerStack().size() == 1) {
+			if(PathStack.get().size() == 1 || currentSource == CurrentSource.LOCAL) {
 				Toast.makeText(this, "Are you sure you want to leave the application? Press back again to confirm. " +
 						 "If you want to keep casting in the background, use the Home button instead.", Toast.LENGTH_LONG).show();
 				synchronized (mutex) {
 					backPressed = true;
 				}
-				handler.postDelayed(resetBackButtonState, 5000);
+				handler.postDelayed(resetBackButtonState, 3000);
 			} else {
 				synchronized (mutex) {
 					backPressed = false;
 				}
 				// Go up one level instead.
-				sambaExplorer.popContainerIdStack();
+				PathStack.popContainerIdStack();
 				MainActivity.this.runOnUiThread(new Runnable() {
 					@Override
 					public void run() {
@@ -1091,11 +1057,18 @@ public class MainActivity extends ActionBarActivity {
 					}							
 				});
 				
-				new SmbReadFolderTask(MainActivity.this).execute(sambaExplorer.getContainerStack().peek());
-			}
-			
-			
-			
+				// Run either the SMB or the UPNP task to go back one level, LOCAL should never get here...
+				switch(currentSource) {
+				case LOCAL:
+					break;
+				case UPNP:
+					uPnPHandler.buildContentListing(PathStack.get().peek());
+					break;
+				case SMB:
+					new SmbReadFolderTask(MainActivity.this).execute(PathStack.get().peek());
+					break;
+				}				
+			}			
 		}
 	}
 	

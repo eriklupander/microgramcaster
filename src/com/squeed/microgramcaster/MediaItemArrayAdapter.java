@@ -70,6 +70,7 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         row.setTag(R.id.dlna_name, objectItem.getName());
         row.setTag(R.id.dlna_duration, objectItem.getDuration());
         
+        
         if( !(objectItem.getData().endsWith(".mp4") || objectItem.getData().endsWith(".ogv")) && objectItem.getType().equals(Constants.DLNA_ITEM)) {
         	holder.title.setPaintFlags(holder.title.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
         } else {
@@ -94,6 +95,7 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
 
         // Try to use UIL to load thumbnail before testing the bitmap
         if(objectItem.getThumbnailUrl() != null) {
+        	row.setTag(R.id.dlna_thumbnail_url, objectItem.getThumbnailUrl());
         	ImageLoader.getInstance().displayImage(objectItem.getThumbnailUrl(), holder.thumb);	
         } else {
             if(objectItem.getThumbnail() != null) {
@@ -124,7 +126,7 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
 
 	
 	static class ViewHolder {
-        TextView title;
+		TextView title;
         TextView duration;
         ImageView thumb;
     }

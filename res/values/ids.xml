@@ -4,6 +4,8 @@
     <item type="id" name="dlna_url" />
     <item type="id" name="dlna_name" />
     <item type="id" name="dlna_duration" />
+    <item type="id" name="dlna_producer" />
+    <item type="id" name="dlna_thumbnail_url" />
     <item type="id" name="externalId" />
     <item type="id" name="type" />
 </resources>

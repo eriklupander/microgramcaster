@@ -22,6 +22,7 @@ import com.squeed.microgramcaster.MainActivity;
 import com.squeed.microgramcaster.source.NetworkSourceArrayAdapter;
 import com.squeed.microgramcaster.source.NetworkSourceItem;
 import com.squeed.microgramcaster.source.NetworkSourceType;
+import com.squeed.microgramcaster.util.PathStack;
 
 
 public class UPnPHandler {
@@ -295,7 +296,7 @@ public class UPnPHandler {
 		}
 
 		public void handleUpPressed() {
-			dlnaContentListingBuilder.popContainerIdStack();
+			PathStack.popContainerIdStack();
 		}
 
 		public void handleNetworkSourceSelected(NetworkSourceItem item) {
@@ -307,7 +308,8 @@ public class UPnPHandler {
 					for (RemoteService service : currentDevice.getServices()) {
 		                if (service.getServiceType().getType().equals("ContentDirectory")) {
 		                	currentService = service;	
-		                	dlnaContentListingBuilder.clearContainerIdStack();
+		                	//dlnaContentListingBuilder.clearContainerIdStack();
+		                	PathStack.clearContainerIdStack();
 		                	dlnaContentListingBuilder.buildFolderListing(null);
 		                }
 		            }

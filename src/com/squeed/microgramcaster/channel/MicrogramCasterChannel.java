@@ -45,12 +45,15 @@ public class MicrogramCasterChannel implements MessageReceivedCallback {
 			String msgType = msg.getString(ChannelDef.TYPE);
 			if(msgType.equalsIgnoreCase(ChannelDef.EVENT_TYPE)) {
 				EventDef evt = EventDef.valueOf(msg.getString(ChannelDef.EVENT_ID));
+				int duration = -1;
 				switch(evt) {
 				case EVENT_PLAYING:
-					activity.onEventPlaying(msg.getInt(ChannelDef.PARAM_POSITION_SECONDS));
+					duration = msg.has(ChannelDef.PARAM_TOTAL_DURATION_SECONDS) ? msg.getInt(ChannelDef.PARAM_TOTAL_DURATION_SECONDS) : -1;
+					activity.onEventPlaying(msg.getInt(ChannelDef.PARAM_POSITION_SECONDS), duration);
 					break;
 				case EVENT_PAUSED:
-					activity.onEventPaused(msg.getInt(ChannelDef.PARAM_POSITION_SECONDS));
+					duration = msg.has(ChannelDef.PARAM_TOTAL_DURATION_SECONDS) ? msg.getInt(ChannelDef.PARAM_TOTAL_DURATION_SECONDS) : -1;
+					activity.onEventPaused(msg.getInt(ChannelDef.PARAM_POSITION_SECONDS), duration);
 					break;
 				case EVENT_FINISHED:
 					activity.onEventFinished();

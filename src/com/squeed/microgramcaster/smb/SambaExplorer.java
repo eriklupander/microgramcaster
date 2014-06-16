@@ -2,7 +2,6 @@ package com.squeed.microgramcaster.smb;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.Stack;
 
 import jcifs.smb.SmbAuthException;
 import jcifs.smb.SmbException;
@@ -21,13 +20,14 @@ import com.squeed.microgramcaster.R;
 import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaItemComparator;
 import com.squeed.microgramcaster.source.NetworkSourceItem;
+import com.squeed.microgramcaster.util.PathStack;
 
 public class SambaExplorer {
 	
 	private static final String TAG = "SambaExplorer";
 
 	private MainActivity mainActivity;
-	private Stack<String> containerStack = new Stack<String>();
+	//private Stack<String> containerStack = new Stack<String>();
 	
 	private String mHost;
 	private int curListID = 0;
@@ -77,8 +77,8 @@ public class SambaExplorer {
 			}
 		}
 		
-		containerStack.clear();
-		containerStack.push(mHost);	
+		PathStack.clearContainerIdStack();// ().clear();
+		PathStack.get().push(mHost);	
 
 		SmbFile f;
 		try {
@@ -195,26 +195,26 @@ public class SambaExplorer {
 	}
 	
 	String getParentContainerIdFromStack() {
-		if(containerStack.size() > 1) {
-			return containerStack.elementAt(containerStack.size() - 2); // Peek the PARENT containerId
-		} else if(containerStack.size() == 1) {
-			return containerStack.elementAt(containerStack.size() - 1);
+		if(PathStack.get().size() > 1) {
+			return PathStack.get().elementAt(PathStack.get().size() - 2); // Peek the PARENT containerId
+		} else if(PathStack.get().size() == 1) {
+			return PathStack.get().elementAt(PathStack.get().size() - 1);
 		} else {
 			return "smb://";	
 		}
 	}
 
 	
-	public void popContainerIdStack() {
-		containerStack.pop();
-	}
-	
-	public void clearContainerIdStack() {
-		containerStack.clear();
-	}
-
-	public Stack<String> getContainerStack() {
-		return containerStack;
-	}
+//	public void popContainerIdStack() {
+//		containerStack.pop();
+//	}
+//	
+//	public void clearContainerIdStack() {
+//		containerStack.clear();
+//	}
+//
+//	public Stack<String> getContainerStack() {
+//		return containerStack;
+//	}
 
 }

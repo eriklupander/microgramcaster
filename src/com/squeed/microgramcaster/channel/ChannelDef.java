@@ -10,7 +10,10 @@ public interface ChannelDef {
 	
 	public static final String PARAM_URL = "url";
 	public static final String PARAM_TITLE = "title";
+	public static final String PARAM_PRODUCER = "producer";
+	public static final String PARAM_THUMBNAIL_URL = "thumbnailUrl";
 	public static final String PARAM_POSITION_SECONDS = "currentPosition";
+	public static final String PARAM_TOTAL_DURATION_SECONDS = "totalDuration";
 	
 	
 }
