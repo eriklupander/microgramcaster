@@ -107,20 +107,22 @@ var microgramcaster = new function() {
         window.messageBus.send(senderId, evt);
     };
 
-    this.sendPlaying = function(currentPositionSeconds) {
+    this.sendPlaying = function(currentPositionSeconds, totalDurationSeconds) {
         var rsp = {
             "type":"event",
             "eventId":"EVENT_PLAYING",
-            "currentPosition": videoplayer.getCurrentPosition()
+            "currentPosition": videoplayer.getCurrentPosition(),
+            "totalDuration" : totalDurationSeconds
         };
         microgramcaster.sendEvent(JSON.stringify(rsp));
     };
 
-    this.sendPaused = function(currentPositionSeconds) {
+    this.sendPaused = function(currentPositionSeconds, totalDurationSeconds) {
         var rsp = {
             "type":"event",
             "eventId":"EVENT_PAUSED",
-            "currentPosition": videoplayer.getCurrentPosition()
+            "currentPosition": videoplayer.getCurrentPosition(),
+            "totalDuration" : totalDurationSeconds
         };
         microgramcaster.sendEvent(JSON.stringify(rsp));
     };

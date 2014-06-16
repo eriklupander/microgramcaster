@@ -15,8 +15,9 @@ var videoplayer = new function() {
     var timeUpdateAfterStartCallback = function() {
         var playerObject = document.getElementById('video');
         var newcurr = Math.floor(playerObject.currentTime);
+        var duration = playerObject.duration;
         if(newcurr != lastCurrentPosition) {
-            microgramcaster.sendPlaying(newcurr);
+            microgramcaster.sendPlaying(newcurr, duration);
             $("video").unbind("timeupdate");
         }
     };
@@ -25,7 +26,7 @@ var videoplayer = new function() {
         cancelSplash();
         var playerObject = document.getElementById('video');
         var curr = playerObject.currentTime;
-        //microgramcaster.sendPlaying(curr);
+
         lastCurrentPosition = Math.floor(curr);
 
         if(typeof currentlyPlayingTitle != 'undefined' && currentlyPlayingTitle != null) {
@@ -44,7 +45,7 @@ var videoplayer = new function() {
         var dur = playerObject.duration;
         moment().format('HH:mm:ss')
         microgramcaster.displayText(humanizeDuration(curr) + ' of ' + humanizeDuration(dur));
-        microgramcaster.sendPaused(curr);
+        microgramcaster.sendPaused(curr, dur);
     });
 
     $("video").bind("ended", function() {
