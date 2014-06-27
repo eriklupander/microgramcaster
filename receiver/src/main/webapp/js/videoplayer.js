@@ -170,7 +170,7 @@ var videoplayer = new function() {
          if(endsWith(url, ".mp4")) {
              return "video/mp4";
          } else if(endsWith(url, ".ogv")) {
-             return "video/ogv";
+             return ""; // "video/ogv";
          } else if(endsWith(url, ".ogg")) {
              return "video/ogg";
          } else if(endsWith(url, ".3gp")) {
