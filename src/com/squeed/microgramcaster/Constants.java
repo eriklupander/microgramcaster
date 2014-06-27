@@ -7,4 +7,5 @@ public interface Constants {
 	String SMB_FILE = "SMB_FILE";
 	String SMB_FOLDER = "SMB_FOLDER";
 	String SMB_BACK = "SMB_BACK";
+	String LOCAL_ITEM = "LOCAL_ITEM";
 }

@@ -17,6 +17,7 @@ import android.widget.TextView;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.util.TimeFormatter;
+import com.squeed.microgramcaster.util.VideoTypes;
 
 /**
  * Array Adapter for showing file listings, directory browsing etc.
@@ -68,17 +69,16 @@ public class MediaItemArrayAdapter extends ArrayAdapter<MediaItem> {
         
         row.setTag(R.id.dlna_url, objectItem.getData());
         row.setTag(R.id.dlna_name, objectItem.getName());
-        row.setTag(R.id.dlna_duration, objectItem.getDuration());
+        row.setTag(R.id.dlna_duration, objectItem.getDuration());        
         
-        
-        if( !(objectItem.getData().endsWith(".mp4") || objectItem.getData().endsWith(".ogv")) && objectItem.getType().equals(Constants.DLNA_ITEM)) {
+        if(!VideoTypes.isPlayableVideo(objectItem.getData()) && (objectItem.getType().equals(Constants.LOCAL_ITEM) || objectItem.getType().equals(Constants.DLNA_ITEM) || objectItem.getType().equals(Constants.SMB_FILE)))  {
+        //if( !(objectItem.getData().endsWith(".mp4") || objectItem.getData().endsWith(".ogv") || objectItem.getData().endsWith(".mkv")) && (objectItem.getType().equals(Constants.LOCAL_ITEM) || objectItem.getType().equals(Constants.DLNA_ITEM) || objectItem.getType().equals(Constants.SMB_FILE)))  {
         	holder.title.setPaintFlags(holder.title.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
         } else {
         	holder.title.setPaintFlags( holder.title.getPaintFlags() & (~ Paint.STRIKE_THRU_TEXT_FLAG));
         }
         holder.title.setText(objectItem.getName());
-        holder.title.setTag(objectItem.getName());
-        
+        holder.title.setTag(objectItem.getName());        
         
         if(objectItem.getDuration() != null) {
         	if(!objectItem.getType().equals(Constants.SMB_FILE)) {

@@ -16,7 +16,7 @@ public class DrawerItemFactory {
 		DrawerItem upnp = new DrawerItem("UPnP Media Servers", "Browse media on UPnP / DLNA Media Servers", 
 				BitmapFactory.decodeResource(activity.getResources(), R.drawable.upnp));
 		DrawerItem smb = new DrawerItem("SMB network share", "Browse media on an SMB network share", 
-				BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_action_storage));
+				BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_menu_archive));
 		
 		items.add(local);
 		items.add(upnp);

@@ -66,6 +66,8 @@ import com.squeed.microgramcaster.source.NetworkSourceDialogBuilder;
 import com.squeed.microgramcaster.upnp.UPnPHandler;
 import com.squeed.microgramcaster.util.PathStack;
 import com.squeed.microgramcaster.util.TimeFormatter;
+import com.squeed.microgramcaster.util.TitleFormatter;
+import com.squeed.microgramcaster.util.VideoTypes;
 import com.squeed.microgramcaster.util.WifiHelper;
 
 /**
@@ -85,7 +87,7 @@ public class MainActivity extends ActionBarActivity {
 	private static final String TAG = "MainActivity";
 
 	private static final String APP_NAME = "4E4599F7";
-	private static final String APP_NAME_DEV = "210EE372";
+	//private static final String APP_NAME_DEV = "210EE372";
 	
 	private CurrentSource currentSource = CurrentSource.LOCAL;
 
@@ -111,6 +113,7 @@ public class MainActivity extends ActionBarActivity {
 
 	private SeekBar seekBar;
 	private MediaItemArrayAdapter adapter;
+	
 
 	private TextView currentPosition;
 	private TextView totalDuration;
@@ -118,12 +121,11 @@ public class MainActivity extends ActionBarActivity {
 	
 	private ProgressDialog loadingDialog;
 	private AlertDialog dialog;
-
-	private UPnPHandler uPnPHandler;
 	
 	private SharedPreferences preferences;
 	
-	
+	private MediaStoreAdapter mediaStoreAdapter;
+	private UPnPHandler uPnPHandler;
 	private SambaExplorer sambaExplorer;
 	
 	// Side-drawer stuff
@@ -209,6 +211,7 @@ public class MainActivity extends ActionBarActivity {
 						sambaExplorer = new SambaExplorer(MainActivity.this);
 					}
 					adapter.clear();
+					adapter.setSelectedPosition(-1);
 					adapter.notifyDataSetChanged();
 					new SmbScannerTask(MainActivity.this).execute();
 					break;
@@ -415,6 +418,7 @@ public class MainActivity extends ActionBarActivity {
 
 	public void onEventPlaying(int positionSeconds, int totalDurationSeconds) {
 		seekBar.setMax(totalDurationSeconds);
+		totalDuration.setText(TimeFormatter.formatTime(totalDurationSeconds));
 		currentSeekbarPosition = positionSeconds;
 		seekBarHandler.removeCallbacksAndMessages(null);
 		playIcon.setVisibility(View.GONE);
@@ -430,7 +434,7 @@ public class MainActivity extends ActionBarActivity {
 		sendMessage(CommandFactory.buildRequestPositionCommand());
 		statusText.setVisibility(View.VISIBLE);
 		if(currentMediaItem !=  null && mSelectedDevice != null) {
-			statusText.setText("Currently playing '" + currentMediaItem.getName() + "' on '" + mSelectedDevice.getFriendlyName() + "'");	
+			statusText.setText("Currently playing '" + TitleFormatter.format(currentMediaItem.getName()) + "' on '" + mSelectedDevice.getFriendlyName() + "'");	
 		}
 		
 	}
@@ -474,7 +478,7 @@ public class MainActivity extends ActionBarActivity {
 
 	public void listVideoFiles() {
 		
-		final MediaStoreAdapter mediaStoreAdapter = new MediaStoreAdapter();
+		mediaStoreAdapter = new MediaStoreAdapter();
 		ArrayList<MediaItem> mediaFiles = new ArrayList<MediaItem>();
 		listView = (ListView) findViewById(com.squeed.microgramcaster.R.id.videoFiles);
 		OnItemClickListener listener = new OnItemClickListener() {
@@ -482,16 +486,18 @@ public class MainActivity extends ActionBarActivity {
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View listItemView, int position, long arg3) {
 				if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_ITEM)) {
-					playDlnaMedia(listItemView, position);
+					playDlnaMedia(listItemView, position, false);
 				} 
 				else if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_FOLDER)) {
 					uPnPHandler.buildContentListing((String) listItemView.getTag(R.id.dlna_url)); // dlna_url == containerId in this case
 				} 
 				else if(((String) listItemView.getTag(R.id.type)).equals(Constants.DLNA_BACK)) {
+					adapter.setSelectedPosition(-1);
 					uPnPHandler.handleUpPressed();
 					uPnPHandler.buildContentListing((String) listItemView.getTag(R.id.dlna_url)); // dlna_url == containerId in this case
 				} 
 				else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_BACK)) {
+					adapter.setSelectedPosition(-1);
 					PathStack.popContainerIdStack();
 					MainActivity.this.runOnUiThread(new Runnable() {
 						@Override
@@ -506,7 +512,7 @@ public class MainActivity extends ActionBarActivity {
 				} 
 				else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_FILE)) {					
 					
-					playSmbMedia(listItemView, position);
+					playSmbMedia(listItemView, position, false);
 					
 				} 
 				else if(((String) listItemView.getTag(R.id.type)).equals(Constants.SMB_FOLDER)) {
@@ -523,7 +529,7 @@ public class MainActivity extends ActionBarActivity {
 						new SmbReadFolderTask(MainActivity.this).execute(folder);						
 					
 				} else {
-					playLocalMedia(mediaStoreAdapter, listItemView, position);	
+					playLocalMedia(listItemView, position, false);	
 				}				
 			}			
 		};
@@ -534,12 +540,10 @@ public class MainActivity extends ActionBarActivity {
 		listView.setAdapter(adapter);
 		
 		try {
-
-			Toast.makeText(this, "Loading castable media items...",  Toast.LENGTH_SHORT);
 			boolean fileFound = mediaStoreAdapter.findFilesAsync(this, adapter);
 			if(!fileFound) {
 				dialog.setMessage("No .mp4 files found using the MediaStore API on your device. Please add a file " +
-								  "to your local file system and try again by pressing the refresh button or restarting the app.");
+								  "to your local file system and try again by selecting local files in the navigation drawer.");
 				dialog.show();
 			}
 		} catch (Throwable t) {
@@ -552,25 +556,24 @@ public class MainActivity extends ActionBarActivity {
 	/**
 	 * The provided URL might be something like
 	 * 
-	 *  smb://STREAMWOLF2/StreamWolfShare/TV-serier/GoT/Game.of.Thrones.S04E05.HDTV.x264-nesmeured.mp4
+	 *  smb://STREAMWOLF2/StreamWolfShare/clips/bigbuckbunny720p.mp4
 	 *  
 	 *  which of course won't be playable directly for the Chromecast, we need our local http server to act
 	 *  as proxy to the SMB share.
 	 *  
 	 *  Construct a URL that can be served with an alternate codepath:
 	 *  
-	 *  http://{ip.to.device]:[port]/smb/STREAMWOLF2/StreamWolfShare/TV-serier/GoT/Game.of.Thrones.S04E05.HDTV.x264-nesmeured.mp4
+	 *  http://{ip.to.device]:[port]/smb/STREAMWOLF2/StreamWolfShare/clips/bigbuckbunny720p.mp4
 	 *  
 	 *  
 	 *  
 	 * @param listItemView
 	 * @param position
 	 */
-	private void playSmbMedia(View listItemView, int position) {
+	private void playSmbMedia(final View listItemView, int position, boolean force) {
 		String url = (String) listItemView.getTag(R.id.dlna_url);
-		if(!(url.endsWith(".mp4")  || url.endsWith(".ogv"))) {
-			dialog.setMessage("The Chromecast cannot play " + url.substring(url.lastIndexOf(".")) + " files, you'll have to convert this file to .mp4");
-			dialog.show();
+		if(!force && !VideoTypes.isPlayableVideo(url.toLowerCase())) {
+			showPlayAnywayDialog(url.substring(url.lastIndexOf(".")), listItemView, position);
 			return;
 		}
 		
@@ -578,7 +581,7 @@ public class MainActivity extends ActionBarActivity {
 		Long duration = (Long) listItemView.getTag(R.id.dlna_duration); // We may need to read the duration using isofileparser?
 		
 		
-		preparePlayMediaItem(name, duration != null ? duration : 1000L, position);
+		preparePlayMediaItem(name, duration != null && duration > -1 ? duration : -1L, position);
 		
 		String finalUrl = buildSmbItemURL(url);
 		Log.i(TAG, "Built SMB proxy URL: " + finalUrl);
@@ -627,7 +630,7 @@ public class MainActivity extends ActionBarActivity {
 		}	
 	}
 
-	private void playLocalMedia(final MediaStoreAdapter mediaStoreAdapter, View arg1, int position) {
+	private void playLocalMedia(View arg1, int position, boolean force) {
 		
 		String fileName = (String) arg1.getTag(R.id.name);
 		MediaItem mi = mediaStoreAdapter.findFile(MainActivity.this, fileName);
@@ -636,22 +639,49 @@ public class MainActivity extends ActionBarActivity {
 			dialog.show();
 			return;
 		}
-		if(!fileName.endsWith(".mp4")) {
-			dialog.setMessage("The Chromecast cannot play " + fileName.substring(fileName.lastIndexOf(".")) + " files, you'll have to convert this file to .mp4");
-			dialog.show();
+
+		if(!force &&!VideoTypes.isPlayableVideo(fileName.toLowerCase())) {
+			showPlayAnywayDialog(fileName.substring(fileName.lastIndexOf(".")), arg1, position);
 			return;
 		}
 		preparePlayMediaItem(mi.getName(), mi.getDuration(), position);
-		Command cmd = CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName), fileName, mi.getProducer(), null);
+		Command cmd = CommandFactory.buildPlayUrlCommand(buildMediaItemURL(fileName), fileName, mi.getProducer(), buildLocalThumbURL(mi.getId().longValue()));
 		sendMessage(cmd);		
 		currentMediaItem = new CurrentMediaItem(mi.getName(), mi.getDuration(), position, cmd);
 	}
 	
-	private void playDlnaMedia(View listItemView, int position) {
+	private void showPlayAnywayDialog(String suffix, final View listItemView, final int position) {
+		// 1. Instantiate an AlertDialog.Builder with its constructor
+		  AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+
+		  // 2. Chain together various setter methods to set the dialog characteristics
+		  builder.setMessage("The Chromecast cannot play " + suffix + " files, do you want to try anyway? It probably won't work :(");
+		  builder.setTitle("Unplayable video");
+		  
+		builder.setPositiveButton("Play anyway",
+				new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						playSmbMedia(listItemView, position, true);
+					}
+				});
+		  builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+	           public void onClick(DialogInterface dialog, int id) {
+	              
+	           }
+	       });
+
+		  // 3. Get the AlertDialog from create()
+		  AlertDialog dialog = builder.create();
+		  dialog.show();
+	}
+
+
+
+	private void playDlnaMedia(View listItemView, int position, boolean force) {
 		String url = (String) listItemView.getTag(R.id.dlna_url);
-		if(!(url.endsWith(".mp4")  || url.endsWith(".ogv"))) {
-			dialog.setMessage("The Chromecast cannot play " + url.substring(url.lastIndexOf(".")) + " files, you'll have to convert this file to .mp4");
-			dialog.show();
+
+		if(!force && !VideoTypes.isPlayableVideo(url.toLowerCase())) {
+			showPlayAnywayDialog(url.substring(url.lastIndexOf(".")), listItemView, position);
 			return;
 		}
 		
@@ -661,7 +691,9 @@ public class MainActivity extends ActionBarActivity {
 		String thumbnailUrl = (String) listItemView.getTag(R.id.dlna_thumbnail_url);
 		preparePlayMediaItem(name, duration, position);
 		
-		Command cmd = CommandFactory.buildPlayUrlCommand(url, name, producer, thumbnailUrl);
+		String remoteThumbnailurl = buildRemoteThumbURL(thumbnailUrl);
+		
+		Command cmd = CommandFactory.buildPlayUrlCommand(url, name, producer, remoteThumbnailurl);
 		sendMessage(cmd);	
 		currentMediaItem = new CurrentMediaItem(name, duration, position, cmd);
 	}
@@ -959,6 +991,16 @@ public class MainActivity extends ActionBarActivity {
 	private String buildMediaItemURL(String fileName) {
 		return MyHTTPD.WEB_SERVER_PROTOCOL + "://" + WifiHelper.getLanIP(MainActivity.this) + ":"
 				+ MyHTTPD.WEB_SERVER_PORT + "/" + fileName;
+	}
+	
+	private String buildLocalThumbURL(Long identifier) {
+		return MyHTTPD.WEB_SERVER_PROTOCOL + "://" + WifiHelper.getLanIP(MainActivity.this) + ":"
+				+ MyHTTPD.WEB_SERVER_PORT + "/thumb/local/" + identifier;
+	}
+	
+	private String buildRemoteThumbURL(String remoteUrl) {
+		return MyHTTPD.WEB_SERVER_PROTOCOL + "://" + WifiHelper.getLanIP(MainActivity.this) + ":"
+				+ MyHTTPD.WEB_SERVER_PORT + "/thumb/remote/" + remoteUrl;
 	}
 	
 	private String buildSmbItemURL(String smbPath) {

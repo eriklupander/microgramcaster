@@ -25,6 +25,7 @@ import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaItemComparator;
 import com.squeed.microgramcaster.util.PathStack;
 import com.squeed.microgramcaster.util.TimeFormatter;
+import com.squeed.microgramcaster.util.VideoTypes;
 
 public class ContentListingBuilder {
 	
@@ -104,6 +105,9 @@ public class ContentListingBuilder {
 	}
 
 	private void buildSingleFolderSet(final Service service, final String containerId) {
+		if(service == null) {
+			return;
+		}
 		Browse b = new Browse(service, containerId, BrowseFlag.DIRECT_CHILDREN) {
 
 		    @Override
@@ -132,7 +136,7 @@ public class ContentListingBuilder {
 					
 						// For now, only add mp4 files.
 						
-						if(preferences.getBoolean("show_unplayable", false) || mi.getData().toLowerCase().trim().endsWith("mp4")) {
+						if(preferences.getBoolean("show_unplayable", false) || VideoTypes.isPlayableVideo(mi.getData().toLowerCase().trim())) {
 							itemAdded = true;
 							addThumbnailBitmap(item, mi);
 							
@@ -198,6 +202,8 @@ public class ContentListingBuilder {
 		    }
 
 			private boolean addThumbnailBitmap(DIDLObject item, final MediaItem mi) {
+				// Actually, if it's a TV-series we want the season/show thumbnail rather than the episode
+				// one since episode thumbs usually just are ugly screendumps in landscape format.			
 				URI firstPropertyValue = item.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class);
 				String thumbnailUrl = firstPropertyValue != null ? firstPropertyValue.toString() : null;
 				mi.setThumbnailUrl(thumbnailUrl);	

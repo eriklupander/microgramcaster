@@ -7,11 +7,13 @@ import jcifs.smb.SmbAuthException;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import android.app.AlertDialog;
+import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.DhcpInfo;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.squeed.microgramcaster.Constants;
@@ -21,12 +23,14 @@ import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaItemComparator;
 import com.squeed.microgramcaster.source.NetworkSourceItem;
 import com.squeed.microgramcaster.util.PathStack;
+import com.squeed.microgramcaster.util.VideoTypes;
 
 public class SambaExplorer {
 	
 	private static final String TAG = "SambaExplorer";
 
 	private MainActivity mainActivity;
+	private SharedPreferences preferences;
 	//private Stack<String> containerStack = new Stack<String>();
 	
 	private String mHost;
@@ -37,6 +41,7 @@ public class SambaExplorer {
 
 	public SambaExplorer(MainActivity mainActivity) {
 		this.mainActivity = mainActivity;
+		this.preferences = PreferenceManager.getDefaultSharedPreferences(mainActivity);
 	}
 
 	private static String getIPsubnet(int addr) {
@@ -155,13 +160,19 @@ public class SambaExplorer {
 							
 						});
 					} else {
-						if(l[i].getCanonicalPath().toLowerCase().endsWith("mp4")) {
+						if((VideoTypes.isPlayableVideo(l[i].getCanonicalPath().toLowerCase())) 
+								|| preferences.getBoolean("show_unplayable", false)) {
 
 							final MediaItem mi = new MediaItem();
 							mi.setType(Constants.SMB_FILE);
 							mi.setData(l[i].getCanonicalPath());
 							mi.setName(l[i].getCanonicalPath().substring(l[i].getCanonicalPath().lastIndexOf("/")+1));
-							mi.setDuration((long) l[i].getContentLength());
+							mi.setDuration((long) l[i].length());
+							if(VideoTypes.isVideo(mi.getName())) {
+								mi.setThumbnail(BitmapFactory.decodeResource(mainActivity.getResources(), R.drawable.ic_action_video));	
+							} else {
+								mi.setThumbnail(BitmapFactory.decodeResource(mainActivity.getResources(), R.drawable.ic_action_cancel));
+							}							
 							
 							mainActivity.runOnUiThread(new Runnable() {
 

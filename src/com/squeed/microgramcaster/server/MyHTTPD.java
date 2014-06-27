@@ -6,19 +6,23 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
-
 import jcifs.smb.SmbFile;
 import jcifs.smb.SmbFileInputStream;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
+import android.graphics.BitmapFactory;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.util.Log;
 
+import com.nostra13.universalimageloader.core.ImageLoader;
 import com.squeed.microgramcaster.media.MediaItem;
 import com.squeed.microgramcaster.media.MediaStoreAdapter;
 
@@ -66,6 +70,7 @@ public class MyHTTPD extends NanoHTTPD {
         put("m3u", "audio/mpeg-url");
         put("mp4", "video/mp4");
         put("ogv", "video/ogg");
+        put("mkv", "video/mp4");
     }};
 	
 	
@@ -82,14 +87,14 @@ public class MyHTTPD extends NanoHTTPD {
         String uri = session.getUri();
 
         try {
-			return respond(Collections.unmodifiableMap(header), uri);
+			return respond(Collections.unmodifiableMap(header), uri, session.getQueryParameterString());
 		} catch (IOException e) {
 			return createResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT,
                   "INTERNAL ERRROR: " + e.getMessage());
 		}
     }
 
-    private Response respond(Map<String, String> headers, String uri) throws IOException {
+    private Response respond(Map<String, String> headers, String uri, String queryParameterString) throws IOException {
         // Remove URL arguments
         uri = uri.trim().replace(File.separatorChar, '/');
         if (uri.indexOf('?') >= 0) {
@@ -102,8 +107,36 @@ public class MyHTTPD extends NanoHTTPD {
         if (uri.startsWith("src/main") || uri.endsWith("src/main") || uri.contains("../")) {
             return createResponse(Response.Status.FORBIDDEN, NanoHTTPD.MIME_PLAINTEXT, "FORBIDDEN: Won't serve ../ for security reasons.");
         }
+        
+        // Serve local thumbnail
+        if(requestedFile.startsWith("/thumb/local/")) {
+        	String localThumbId = requestedFile.substring("/thumb/local/".length());
+        	Log.i(TAG, "Requesting local thumb for path: " + requestedFile + " parsed into: " + localThumbId);
+        	 Bitmap bitmap = MediaStore.Video.Thumbnails.getThumbnail(
+        			 ctx.getContentResolver(),
+        			 Long.parseLong(localThumbId),
+		                MediaStore.Video.Thumbnails.MINI_KIND,
+		                (BitmapFactory.Options) null );
+        	 return returnThumbnailResponse(bitmap);
+        }
+        
+     // Serve remote thumbnail
+        else if(requestedFile.startsWith("/thumb/remote/")) {
+        	String remoteUrl = requestedFile.substring("/thumb/remote/".length());
+        	Log.i(TAG, "Requesting remote thumb for path: " + requestedFile + " parsed into: " + remoteUrl);
+        	
+        	if(queryParameterString != null && queryParameterString.trim().length() > 0) {
+        		remoteUrl = remoteUrl + "?" + queryParameterString;
+        	}
+        	
 
-        if(requestedFile.startsWith("/smb/")) {
+        	//Bitmap bitmap = BitmapFactory.decodeStream((InputStream)new URL(remoteUrl).getContent());
+        	Bitmap bitmap = ImageLoader.getInstance().loadImageSync(remoteUrl);
+        	
+        	 return returnThumbnailResponse(bitmap);
+        }
+
+        else if(requestedFile.startsWith("/smb/")) {
         	// Serve media from SMB share, this could be complicated...
         	String smbFileUrl = "smb://" + requestedFile.substring(5);
         	SmbFile smbFile = new SmbFile(smbFileUrl);
@@ -137,6 +170,43 @@ public class MyHTTPD extends NanoHTTPD {
         }
         
        
+    }
+
+
+	private Response returnThumbnailResponse(Bitmap bitmap) throws IOException {
+		bitmap = ThumbnailUtils.extractThumbnail(bitmap, 160, 230);
+		 ByteArrayOutputStream bos = new ByteArrayOutputStream(); 
+		 bitmap.compress(CompressFormat.PNG, 0 /*ignored for PNG*/, bos); 
+		 byte[] bitmapData = bos.toByteArray();
+		 bos.close();
+		 
+		 ByteArrayInputStream bs = new ByteArrayInputStream(bitmapData);
+		 return createResponse(Response.Status.OK, MIME_TYPES.get("png"), bs);
+	}
+    
+    private Bitmap cropBitmap(Bitmap srcBmp) {
+    	Bitmap dstBmp = null;
+    	if (srcBmp.getWidth() >= srcBmp.getHeight()){
+
+    		  dstBmp = Bitmap.createBitmap(
+    		     srcBmp, 
+    		     srcBmp.getWidth()/2 - srcBmp.getHeight()/2,
+    		     0,
+    		     srcBmp.getHeight(), 
+    		     srcBmp.getHeight()
+    		     );
+
+    		}else{
+
+    		  dstBmp = Bitmap.createBitmap(
+    		     srcBmp,
+    		     0, 
+    		     srcBmp.getHeight()/2 - srcBmp.getWidth()/2,
+    		     srcBmp.getWidth(),
+    		     srcBmp.getWidth() 
+    		     );
+    		}
+    	return dstBmp;
     }
 
     

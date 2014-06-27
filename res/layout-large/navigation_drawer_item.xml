@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:text="A media source"
             android:textColor="@color/white"
-            android:textSize="18dp" />
+            android:textSize="24dp" />
 
         <TextView
             android:id="@+id/drawer_item_desc"
@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:text="The long description text..."
             android:textColor="@color/white"
-            android:textSize="12dp" />
+            android:textSize="15dp" />
 
     </LinearLayout>
 

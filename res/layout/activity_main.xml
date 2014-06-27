@@ -38,11 +38,13 @@
 	        android:id="@+id/statusText"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:layout_alignTop="@+id/linearLayout1"
+	        android:layout_above="@+id/linearLayout1"
 	        android:layout_centerHorizontal="true"
+	        android:paddingTop="8dp"
 	        android:text=""
-	        android:textSize="10sp"
-	        android:visibility="invisible" />
+	        android:textAlignment="center"
+	        android:textSize="10dp"
+	        android:visibility="gone" />
 	
 	    <LinearLayout
 	        android:id="@+id/linearLayout1"
@@ -52,9 +54,7 @@
 	        android:layout_alignParentBottom="true"
 	        android:layout_alignRight="@+id/videoFiles"
 	        android:focusable="true"
-	        android:gravity="center"
-	        android:paddingBottom="6dp"
-	        android:paddingTop="6dp" >
+	        android:gravity="center" >
 	
 	        <ImageView
 	            android:id="@+id/action_placeholder"
@@ -66,7 +66,7 @@
 	            android:scaleType="centerInside"
 	            android:src="@drawable/round_hourglass_icon"
 	            android:title="@string/placeholder"
-	            android:visibility="invisible" />
+	            android:visibility="visible" />
 	
 	        <ImageView
 	            android:id="@+id/action_play"
@@ -123,7 +123,7 @@
 	
 	<!-- The navigation drawer -->
     <ListView android:id="@+id/left_drawer"
-        android:layout_width="240dp"
+        android:layout_width="320dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:choiceMode="singleChoice"
