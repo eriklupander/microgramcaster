@@ -29,12 +29,20 @@ var videoplayer = new function() {
 
         lastCurrentPosition = Math.floor(curr);
 
-        if(typeof currentlyPlayingTitle != 'undefined' && currentlyPlayingTitle != null) {
-            microgramcaster.displayText('Playing \'' + currentlyPlayingTitle + '\'');
-        } else {
-            microgramcaster.displayText('Playing \'' + lastSegment(playerObject.currentSrc));
-        }
+//        if(typeof currentlyPlayingTitle != 'undefined' && currentlyPlayingTitle != null) {
+//            microgramcaster.displayText('Playing \'' + currentlyPlayingTitle + '\'');
+//        } else {
+//            microgramcaster.displayText('Playing \'' + lastSegment(playerObject.currentSrc));
+//        }
 
+
+        $('.overlay').css('opacity', 1.0);
+        $('.overlay').stop().fadeOut(5000, function() {
+            $('.overlay').css('display','none');
+            $('.overlay').css('opacity', 0.0);
+        });
+
+        $('.overlay').css('display','block');
         $("video").bind("timeupdate", timeUpdateAfterStartCallback);
     });
 
@@ -45,6 +53,14 @@ var videoplayer = new function() {
         var dur = playerObject.duration;
         moment().format('HH:mm:ss')
         microgramcaster.displayText(humanizeDuration(curr) + ' of ' + humanizeDuration(dur));
+
+        $('.overlay').css('opacity', 1.0);
+        $('.overlay').stop().fadeOut(5000, function() {
+            $('.overlay').css('display','none');
+            $('.overlay').css('opacity', 0.0);
+        });
+
+        $('.overlay').css('display','block');
         microgramcaster.sendPaused(curr, dur);
     });
 
@@ -60,16 +76,19 @@ var videoplayer = new function() {
     });
 
     $("video").bind("play", function() {
+        $('.overlay').css('display','block');
+        $('.overlay').css('opacity', 1.0);
         renderPlayCallback();
     });
 
     $("video").bind("loadstart", function() {
         cancelSplash();
         var playerObject = document.getElementById('video');
+        microgramcaster.displayText('Loading...');
         if(typeof currentlyPlayingTitle != 'undefined' && currentlyPlayingTitle != null) {
-            microgramcaster.displayText('Starting to load \'' + currentlyPlayingTitle + '\'');
+            // microgramcaster.displayText('Starting to load \'' + currentlyPlayingTitle + '\'');
         } else {
-            microgramcaster.displayText('Starting to load ' + lastSegment(playerObject.currentSrc));
+            //microgramcaster.displayText('Starting to load ' + lastSegment(playerObject.currentSrc));
         }
 
     });
@@ -109,10 +128,11 @@ var videoplayer = new function() {
         var curr = playerObject.currentTime;
         var dur = playerObject.duration;
         moment().format('HH:mm:ss');
+        microgramcaster.displayText('<span id="currentPosition">'+humanizeDuration(curr) + '</span> of ' + humanizeDuration(dur));
         if(typeof currentlyPlayingTitle != 'undefined' && currentlyPlayingTitle != null) {
-            microgramcaster.displayText('Playing \'' + currentlyPlayingTitle + '\' <span id="currentPosition">' + humanizeDuration(curr) + '</span> of ' + humanizeDuration(dur));
+           // microgramcaster.displayText('Playing \'' + currentlyPlayingTitle + '\' <span id="currentPosition">' + humanizeDuration(curr) + '</span> of ' + humanizeDuration(dur));
         } else {
-            microgramcaster.displayText('Playing \'' + lastSegment(playerObject.currentSrc) + '\' <span id="currentPosition">' + humanizeDuration(curr) + '</span> of ' + humanizeDuration(dur));
+          //  microgramcaster.displayText('Playing \'' + lastSegment(playerObject.currentSrc) + '\' <span id="currentPosition">' + humanizeDuration(curr) + '</span> of ' + humanizeDuration(dur));
         }
 
 
@@ -158,7 +178,7 @@ var videoplayer = new function() {
          } else if(endsWith(url, ".vp8")) {
              return "video/vp8";
          } else if(endsWith(url, ".mkv")) {
-             return "video/x-matroska";
+             return "";
          } else {
              return "video/mp4";
          }
@@ -169,11 +189,13 @@ var videoplayer = new function() {
         $('#splash').css('display', 'none');
         var player = document.getElementById('video');
         player.play();
+
     };
 
     this.pause = function() {
         var player = document.getElementById('video');
         player.pause();
+        $('.overlay').css('display','block');
     };
 
     /**
@@ -184,12 +206,27 @@ var videoplayer = new function() {
      * @param title
      *      Human-readable title.
      */
-    this.playUrl = function(url, title) {
+    this.playUrl = function(url, title, producer, thumbnailUrl) {
         if(typeof title != 'undefined' && title != null) {
             currentlyPlayingTitle = title;
+            $('.titleinfo_title').html(title);
         } else {
+            $('.titleinfo_title').html(url);
             currentlyPlayingTitle = null;
         }
+
+        // Update overlay
+        if(typeof thumbnailUrl != 'undefined' && thumbnailUrl != null) {
+            $('#thumbnail').attr('src',thumbnailUrl);
+        } else {
+            $('#thumbnail').attr('src','coverart.png');
+        }
+        if(typeof producer != 'undefined' && producer != null) {
+            $('.titleinfo_author').html(producer);
+        } else {
+            $('.titleinfo_author').empty();
+        }
+
 
         if($('#video').hasClass('rotate90')) {
             $('#video').removeClass('rotate90');
@@ -198,9 +235,16 @@ var videoplayer = new function() {
         $('#video').empty();
         var srcElem = document.createElement("source");
         $(srcElem).attr('src',url);
-        $(srcElem).attr('type',getTypeFromUrl(url));
+        var contentType = getTypeFromUrl(url);
+        if(contentType != "") {
+            $(srcElem).attr('type', contentType);
+        } else {
+            $(srcElem).removeAttr('type');
+        }
+
         $('#video').append(srcElem);
         this.play();
+        $('.overlay').css('display','block');
     };
 
     this.addToPlaylist = function(url) {

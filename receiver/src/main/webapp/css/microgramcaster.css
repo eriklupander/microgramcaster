@@ -4,21 +4,52 @@ body {
 }
 
 #message {
-	background-color: #000000;
-	border: 0 solid #C0C0C0;
-	color: #FFFFFF;
-	display: block;
-	font-family: Verdana,Geneva,sans-serif;
-	font-size: 20px;
-	font-weight: bold;
-	left: 40px;
-	opacity: 0.5;
-	position: absolute;
-	text-align: center;
-	top: 630px;
-	vertical-align: middle;
-	width: 1200px;
-	z-index: 999;
+    background-color: transparent;
+    border: 0 solid #C0C0C0;
+    color: #FFFFFF;
+    display: block;
+    font-family: Arial;
+    font-size: 20px;
+
+    left: 40px;
+    opacity: 0.5;
+    position: absolute;
+    text-align: center;
+    top: 655px;
+    vertical-align: middle;
+    width: 1200px;
+    z-index: 999;
+}
+
+.logotype {
+    position: absolute;
+    top: 620px;
+    left: 1170px;
+}
+
+.overlay {
+    display:none;
+}
+
+.titleinfo {
+    position: absolute;
+    top: 455px;
+    left: 40px;
+    max-width:530px;
+}
+
+.titleinfo_title {
+    color:#E4E4E4;
+    font-family: Arial;
+    font-size:20pt;
+    background: rgba(0,0,0,0.2);
+}
+
+.titleinfo_author {
+    color:#E4E4E4;
+    font-family: Arial;
+    font-size:12pt;
+    background: rgba(0,0,0,0.2);
 }
 
 .rotate90 {

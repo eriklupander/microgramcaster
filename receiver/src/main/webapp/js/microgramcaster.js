@@ -46,7 +46,7 @@ var microgramcaster = new function() {
         var command = cmd.parse(event.data);
         switch(command.id) {
             case "CMD_PLAY_URL":
-                videoplayer.playUrl(command.params.url, command.params.title);
+                videoplayer.playUrl(command.params.url, command.params.title, command.params.producer, command.params.thumbnailUrl);
                 break;
             case "CMD_PLAY":
                 videoplayer.play();
@@ -98,7 +98,7 @@ var microgramcaster = new function() {
         $('#message').clearQueue();
         $('#message').html(text);
 		$('#message').css('opacity','1.0');
-		$('#message').animate({'opacity':0.0}, 4000);
+		$('#message').animate({'opacity':0.0}, 5000);
 		
         window.castReceiverManager.setApplicationState(text);
     };
