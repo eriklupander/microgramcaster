@@ -15,22 +15,22 @@ import com.squeed.microgramcaster.util.PathStack;
 
 public class SmbReadFolderTask extends AsyncTask<String, Void, Object>{
 
-	private MainActivity ctx;
+	private MainActivity activity;
 
-    public SmbReadFolderTask(MainActivity ctx) {
-    	this.ctx = ctx;	
+    public SmbReadFolderTask(MainActivity activity) {
+    	this.activity = activity;	
     }
 
 	@Override
 	protected Object doInBackground(String... params) {
-		final SambaExplorer smbExplorer = ctx.getSambaExplorer();
+		final SambaExplorer smbExplorer = activity.getSambaExplorer();
 		final String folder = params[0];
 		// Only push if container not already on stack. Check for back / up
 		if(!PathStack.get().contains(folder)) {
 			PathStack.get().push(folder);	
 		}
 		try {
-			ctx.runOnUiThread(new Runnable() {
+			activity.runOnUiThread(new Runnable() {
 
 				@Override
 				public void run() {
@@ -38,12 +38,12 @@ public class SmbReadFolderTask extends AsyncTask<String, Void, Object>{
 					back.setName("");
 					back.setData(smbExplorer.getParentContainerIdFromStack());			
 					back.setType(Constants.SMB_BACK);
-					back.setThumbnail(BitmapFactory.decodeResource(ctx.getResources(), R.drawable.ic_menu_back));
-					ctx.getMediaItemListAdapter().clear();
+					back.setThumbnail(BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_menu_back));
+					activity.getMediaItemListAdapter().clear();
 					if(PathStack.get().size() > 1) {
-						ctx.getMediaItemListAdapter().add(back);
+						activity.getMediaItemListAdapter().add(back);
 					}					
-					ctx.getMediaItemListAdapter().notifyDataSetChanged();
+					activity.getMediaItemListAdapter().notifyDataSetChanged();
 				}
 				
 			});

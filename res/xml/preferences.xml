@@ -9,6 +9,13 @@
             android:key="show_unplayable"
             android:summary="@string/show_unplayable_desc"
             android:title="@string/show_unplayable" />
+        
+        <CheckBoxPreference
+            android:name="@string/show_rating"
+            android:defaultValue="true"
+            android:key="show_rating"
+            android:summary="@string/show_rating_desc"
+            android:title="@string/show_rating" />
     </PreferenceCategory>
     
     <PreferenceCategory android:title="@string/about" >
@@ -36,6 +43,6 @@
             android:title="@string/layout_microgramcaster" />
     </PreferenceCategory>
 
-    
+  
 
 </PreferenceScreen>

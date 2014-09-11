@@ -134,11 +134,19 @@ public class ContentListingBuilder {
 						mi.setExternalId(item.getId());
 												
 					
-						// For now, only add mp4 files.
+						// Add files
 						
 						if(preferences.getBoolean("show_unplayable", false) || VideoTypes.isPlayableVideo(mi.getData().toLowerCase().trim())) {
 							itemAdded = true;
-							addThumbnailBitmap(item, mi);
+							boolean thumbnailAdded = addThumbnailBitmap(item, mi);
+							if(!thumbnailAdded) {
+								if(VideoTypes.isVideo(mi.getData())) {
+									mi.setThumbnail(BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_action_video));	
+								} else {
+									mi.setThumbnail(BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_action_cancel));
+								}
+							}
+							
 							
 							activity.runOnUiThread(new Runnable() {
 								
@@ -170,7 +178,7 @@ public class ContentListingBuilder {
 							mi.setProducer(item.getCreator());
 							mi.setData(item.getId());
 							boolean thumbNailAdded = addThumbnailBitmap(item, mi);
-							if(!thumbNailAdded) {
+							if(!thumbNailAdded) {								
 								mi.setThumbnail(BitmapFactory.decodeResource(activity.getResources(), R.drawable.ic_menu_archive));
 							}
 							mi.setType(Constants.DLNA_FOLDER);

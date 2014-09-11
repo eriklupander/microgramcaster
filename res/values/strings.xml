@@ -24,19 +24,21 @@
 	<string name="show_unplayable">Show uncastable items</string>
 	<string name="show_unplayable_desc">When browsing media, show items (avi, mpg, wmv...) that the Chromecast can\'t playback</string>
 
-	<string name="about">About Microgramcaster 1.1</string>
+	<string name="misc">Miscellaneous</string>
+	<string name="show_rating">Show rating action</string>
+	<string name="show_rating_desc">Makes the \'Show rating\' item visible in the drawer menu. Submitting a rating will always hide the drawer item. Thanks!</string>
+	
+	
+	<string name="about">About Microgramcaster 1.21</string>
 	<string name="about_microgramcaster">Licensing information</string>
 	<string name="about_microgramcaster_desc">Microgramcaster is licensed under The MIT License (MIT) and was developed as a study project by Squeed Labs. (c) Squeed AB 2014.
 	    
 	    This application uses the following 3rd party libraries: Universal Image Loader (c) 2011-2014 by Sergey Tarasevich (Apache License, Version 2.0) | Cling (c) 4th Line GmbH  (CDDL-1.0) | NanoHTTPD Copyright (c) 2012-2013 by Paul S. Hawke, 2001,2005-2013 by Jarno Elonen, 2010 by Konstantinos Togias All rights reserved (Modified BSD licence)</string>
 	    
-	<string name="docs_microgramcaster">General Information, 1.1</string>
-	<string name="docs_microgramcaster_desc">Supports playback of .mp4 files from local storage and from UPnP ContentDiscovery capable media servers. Local files uses a flat file listing while UPnP sources retains whatever folder och category structure the Media Server is using</string>
+	<string name="docs_microgramcaster">General Information, 1.21</string>
+	<string name="docs_microgramcaster_desc">Supports playback of .mp4 files from local storage, unsecured SMB shares and from UPnP ContentDiscovery capable media servers. Local files uses a flat file listing while UPnP/SMB sources retains whatever folder och category structure the Media Server is using. mkv containers are also playable if the codecs used are supported by the Chromecast. Please note that the Chromecast does not support AC3 audio which is frequently used in mkv containers.</string>
 	
-	<!-- 
-	<string name="ki_microgramcaster">Known Issues</string>
-	<string name="ki_microgramcaster_desc">15 seconds after exiting the application by double-tapping the back button, a Force Close message may be shown. This is due to a problem in an underlying 3rd party library</string>
-	 -->
+	
 	<string name="layout_microgramcaster">Layout information</string>
 	<string name="layout_microgramcaster_desc">Uses standard layout</string>
 	

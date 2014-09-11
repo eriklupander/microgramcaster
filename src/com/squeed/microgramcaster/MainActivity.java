@@ -11,7 +11,9 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -137,6 +139,8 @@ public class MainActivity extends ActionBarActivity {
 
 	private ActionBarDrawerToggle mDrawerToggle;
 
+	private OnSharedPreferenceChangeListener prefChangeListener;
+
 
 
 	@Override
@@ -155,6 +159,17 @@ public class MainActivity extends ActionBarActivity {
 		initMediaControlButtons();
 		initSeekBar();
 		preferences = PreferenceManager.getDefaultSharedPreferences(this);
+		prefChangeListener = new OnSharedPreferenceChangeListener() {
+			
+			@Override
+			public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+				
+				if(key.equals("show_rating")) {
+					initDrawer();
+				}
+			}
+		};
+		preferences.registerOnSharedPreferenceChangeListener(prefChangeListener);
 	}
 
 	
@@ -194,18 +209,23 @@ public class MainActivity extends ActionBarActivity {
 
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
-				resetMediaControlsOnRescan();
+				
 				
 				switch(position) {
 				case 0:
+					resetMediaControlsOnRescan();
 					currentSource = CurrentSource.LOCAL;				
-					listVideoFiles();
+					listVideoFiles();					
 					break;
+				
 				case 1:
+					resetMediaControlsOnRescan();
 					currentSource = CurrentSource.UPNP;
-					uPnPHandler.searchUPnp();
+					uPnPHandler.searchUPnp();					
 					break;
+				
 				case 2:
+					resetMediaControlsOnRescan();
 					currentSource = CurrentSource.SMB;
 					if(sambaExplorer == null) {
 						sambaExplorer = new SambaExplorer(MainActivity.this);
@@ -213,7 +233,15 @@ public class MainActivity extends ActionBarActivity {
 					adapter.clear();
 					adapter.setSelectedPosition(-1);
 					adapter.notifyDataSetChanged();
-					new SmbScannerTask(MainActivity.this).execute();
+					new SmbScannerTask(MainActivity.this).execute();					
+					break;
+				
+				case 3:
+					PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean("show_rating", false).apply();
+					
+					Intent intent = new Intent(Intent.ACTION_VIEW);
+					intent.setData(Uri.parse("market://details?id=com.squeed.microgramcaster"));
+					startActivity(intent);
 					break;
 				}
 				drawerList.setItemChecked(position, true);
@@ -1105,10 +1133,18 @@ public class MainActivity extends ActionBarActivity {
 				case LOCAL:
 					break;
 				case UPNP:
-					uPnPHandler.buildContentListing(PathStack.get().peek());
+					if(PathStack.get().size() > 0) {
+						uPnPHandler.buildContentListing(PathStack.get().peek());	
+					} else {
+						uPnPHandler.buildContentListing("0");	
+					}
 					break;
 				case SMB:
-					new SmbReadFolderTask(MainActivity.this).execute(PathStack.get().peek());
+					if(PathStack.get().size() > 0) {
+						new SmbReadFolderTask(MainActivity.this).execute(PathStack.get().peek());
+					} else {
+						new SmbReadFolderTask(MainActivity.this).execute("smb:///");
+					}
 					break;
 				}				
 			}			

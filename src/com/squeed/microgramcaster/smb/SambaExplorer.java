@@ -7,6 +7,8 @@ import jcifs.smb.SmbAuthException;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
@@ -34,22 +36,22 @@ public class SambaExplorer {
 	//private Stack<String> containerStack = new Stack<String>();
 	
 	private String mHost;
-	private int curListID = 0;
-
-	private boolean active;
-	private String IPsubnet;
+//	private int curListID = 0;
+//
+//	private boolean active;
+//	private String IPsubnet;
 
 	public SambaExplorer(MainActivity mainActivity) {
 		this.mainActivity = mainActivity;
 		this.preferences = PreferenceManager.getDefaultSharedPreferences(mainActivity);
 	}
 
-	private static String getIPsubnet(int addr) {
-		StringBuffer buf = new StringBuffer();
-		buf.append(addr & 0xff).append('.').append((addr >>>= 8) & 0xff).append('.').append((addr >>>= 8) & 0xff)
-				.append('.');
-		return buf.toString();
-	}
+//	private static String getIPsubnet(int addr) {
+//		StringBuffer buf = new StringBuffer();
+//		buf.append(addr & 0xff).append('.').append((addr >>>= 8) & 0xff).append('.').append((addr >>>= 8) & 0xff)
+//				.append('.');
+//		return buf.toString();
+//	}
 	
 	public void init() {
 		
@@ -58,13 +60,31 @@ public class SambaExplorer {
 		ConnectivityManager cm = (ConnectivityManager) mainActivity.getSystemService(mainActivity.CONNECTIVITY_SERVICE);
 		NetworkInfo ni = cm.getActiveNetworkInfo();
 		if (ni.getType() == ConnectivityManager.TYPE_MOBILE) {
-			new AlertDialog.Builder(mainActivity).setMessage("This application is meant for WIFI networks.").show();
+			mainActivity.runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					//new AlertDialog.Builder(mainActivity).setMessage("This application is meant for WIFI networks.").show();
+					AlertDialog dialog = new AlertDialog.Builder(mainActivity).create();
+					dialog.setTitle("No WiFi");
+					dialog.setMessage("SMB scanning requires a WiFi connection.");
+					dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Ok", new DialogInterface.OnClickListener() {
+
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							dialog.dismiss();
+						}
+					});
+					dialog.show();
+				} 
+				
+			});
 			return;
 		}
 
 		WifiManager wifi = (WifiManager) mainActivity.getSystemService(mainActivity.WIFI_SERVICE);
-		DhcpInfo info = wifi.getDhcpInfo();
-		IPsubnet = getIPsubnet(info.ipAddress);
+		//DhcpInfo info = wifi.getDhcpInfo();
+		//IPsubnet = getIPsubnet(info.ipAddress);
 
 		mHost = "";
 

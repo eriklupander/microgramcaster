@@ -9,12 +9,10 @@ import org.fourthline.cling.model.meta.Service;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
 
-import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.AsyncTask;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -32,8 +30,6 @@ public class UPnPHandler {
 
 		private MainActivity activity;
 		private ContentListingBuilder dlnaContentListingBuilder;
-
-		private final Object MUTEX = new Object();
 
 		private static final String TAG = "UPnPHandler";
 	    
@@ -184,104 +180,6 @@ public class UPnPHandler {
 	  
 		private RemoteService currentService;
 
-		
-	    
-//	    private void showUPnPDeviceListDialog() {
-//	    	AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-//	    	builder.setTitle("Select Media Source");
-//	    	//builder.setMessage("UPnP scan may take a few moments...");
-//	    	LinearLayout layout = new LinearLayout(activity);
-//	    	layout.setOrientation(LinearLayout.VERTICAL);
-//	    	
-//	    	ListView upnpDeviceList = new ListView(activity);
-//	    	
-//	    	
-//	    	upnpDeviceList.setAdapter(getNetworkSourceArrayAdapter());
-//	    	upnpDeviceList.setOnItemClickListener(new OnItemClickListener() {
-//				
-//				@Override
-//				public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
-//					
-//					Device unspecDevice = getNetworkSourceArrayAdapter().getItem(position).getDevice();
-//					if(unspecDevice instanceof RemoteDevice) {
-//						RemoteDevice currentDevice = (RemoteDevice) unspecDevice; 
-//						for (RemoteService service : currentDevice.getServices()) {
-//			                if (service.getServiceType().getType().equals("ContentDirectory")) {
-//			                	currentService = service;	
-//			                	dlnaContentListingBuilder.clearContainerIdStack();
-//			                	dlnaContentListingBuilder.buildFolderListing(null);
-//			                }
-//			            }
-//					}
-//					
-//					upnpDeviceDialog.dismiss();
-//				}
-//			});
-//	    	
-//	    	TextView localText = new TextView(activity);
-//	    	localText.setPadding(4, 4, 4, 0);
-//	    	localText.setTextSize(16);
-//	    	localText.setTypeface(null, Typeface.BOLD);
-//	    	localText.setText("Local file system");
-//	    	OnClickListener cl = new OnClickListener() {
-//				
-//				@Override
-//				public void onClick(View v) {
-//					upnpDeviceDialog.dismiss();
-//					activity.listVideoFiles();
-//				}
-//			};
-//	    	localText.setOnClickListener(cl);
-//	    	TextView underText = new TextView(activity);
-//	    	underText.setPadding(4, 0, 4, 0);
-//	    	underText.setTextSize(14);
-//	    	underText.setText("Browse files on your local file system");
-//	    	underText.setOnClickListener(cl);
-//	    	
-//	    	layout.addView(localText);
-//	    	layout.addView(underText);
-//	    	layout.addView(upnpDeviceList);
-//	    	
-//	    	// END UPNP LISTING
-//	    	
-//	    	// START SMB
-//	    	TextView smbText = new TextView(activity);
-//	    	smbText.setPadding(4, 4, 4, 0);
-//	    	smbText.setTextSize(16);
-//	    	smbText.setTypeface(null, Typeface.BOLD);
-//	    	smbText.setText("SMB Network share");
-//	    	OnClickListener clSmb = new OnClickListener() {
-//				
-//				@Override
-//				public void onClick(View v) {
-//					activity.runOnUiThread(new Runnable() {
-//
-//						@Override
-//						public void run() {
-//							activity.getMediaItemListAdapter().clear();
-//							activity.getMediaItemListAdapter().notifyDataSetChanged();
-//							upnpDeviceDialog.hide();
-//						}
-//					});
-//					new SmbScannerTask(activity).execute();
-//				}
-//			};
-//			smbText.setOnClickListener(clSmb);
-//	    	TextView smbUnderText = new TextView(activity);
-//	    	smbUnderText.setPadding(4, 0, 4, 0);
-//	    	smbUnderText.setTextSize(14);
-//	    	smbUnderText.setText("Browse SMB shares on your local network");
-//	    	smbUnderText.setOnClickListener(clSmb);
-//	    	
-//	    	layout.addView(smbText);
-//	    	layout.addView(smbUnderText);
-//	    	
-//	    	builder.setView(layout);
-//	    	upnpDeviceDialog = builder.create();
-//
-//	    	upnpDeviceDialog.show();
-//	    }
-	    
 
 		public Service getCurrentService() {
 			return currentService;

@@ -7,7 +7,9 @@ public class PathStack {
 	private static Stack<String> containerStack = new Stack<String>();
 	
 	public static void popContainerIdStack() {
-		containerStack.pop();
+		if(containerStack.size() > 0) {
+			containerStack.pop();	
+		}
 	}
 	
 	public static void clearContainerIdStack() {
